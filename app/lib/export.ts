@@ -36,14 +36,14 @@ export async function exportXlsx(rows: AgendaRow[], year: number) {
   ws.mergeCells("A1:F1");
   ws.getCell("A1").value = `ANNUAL AGENDA ${year}`;
   ws.getCell("A1").font = { bold: true, size: 14, color: { argb: "FFFFFFFF" } };
-  ws.getCell("A1").fill = { type: "pattern", pattern: "solid", fgColor: { argb: "FF44808F" } };
+  ws.getCell("A1").fill = { type: "pattern", pattern: "solid", fgColor: { argb: "FF0B6E75" } };
   ws.getCell("A1").alignment = { horizontal: "center", vertical: "middle" };
   ws.getRow(1).height = 24;
 
   const head = ws.addRow(HEAD);
   head.font = { bold: true };
   head.eachCell((c) => {
-    c.fill = { type: "pattern", pattern: "solid", fgColor: { argb: "FFD9D2E9" } };
+    c.fill = { type: "pattern", pattern: "solid", fgColor: { argb: "FFE2F0F1" } };
     c.border = { bottom: { style: "medium" } };
   });
   for (const r of exportRows(rows, year)) ws.addRow(r);
@@ -71,7 +71,7 @@ export async function exportPdf(rows: AgendaRow[], year: number) {
     body: exportRows(rows, year),
     startY: 56,
     styles: { fontSize: 9, cellPadding: 4, valign: "top" },
-    headStyles: { fillColor: [68, 128, 143] },
+    headStyles: { fillColor: [11, 110, 117] },
     columnStyles: { 0: { cellWidth: 28 }, 1: { cellWidth: 250 }, 2: { cellWidth: 70 }, 3: { cellWidth: 65 }, 4: { cellWidth: 90 } },
     margin: { left: 40, right: 40 },
   });
