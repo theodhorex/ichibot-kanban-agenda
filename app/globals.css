@@ -24,3 +24,50 @@ body {
   color: var(--foreground);
   font-family: var(--font-geist-sans), Arial, Helvetica, sans-serif;
 }
+
+/* ---- Annual agenda: kelas statis agar sel tidak membawa style inline ---- */
+.dc {
+  background: #fff;
+  border-bottom: 1px solid #d0d0d0;
+  border-right: 1px solid #d0d0d0;
+  cursor: pointer;
+}
+.dc:hover { background: #e8f1f4; }
+.dc.dc-we { background: #fdf1f1; }
+.dc.dc-today { background: #fff3b0; }
+.dc.dc-first, .dh.dc-first { border-left: 2px solid #000; }
+.dc.dc-mark:hover { filter: brightness(.92); }
+
+.dh {
+  position: sticky;
+  z-index: 3;
+  border-bottom: 1px solid #d0d0d0;
+  border-right: 1px solid #d0d0d0;
+  background: #fff;
+  font-size: 12px;
+  font-weight: 400;
+  cursor: pointer;
+}
+.dh.dc-we { background: #f4cccc; }
+.dh:hover { background: #e8f1f4; }
+
+.lc {
+  background: #fff;
+  border-bottom: 1px solid #d0d0d0;
+  border-right: 1px solid #9a9a9a;
+  cursor: pointer;
+  overflow: hidden;
+  padding: 0 4px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+tr:hover > .lc { background: #eef6f8; }
+tr.is-empty > .lc { cursor: cell; }
+
+@keyframes drawer-in { from { transform: translateX(24px); opacity: 0; } to { transform: none; opacity: 1; } }
+.drawer-in { animation: drawer-in .16s ease-out; }
+@media (prefers-reduced-motion: reduce) { .drawer-in { animation: none; } }
+
+.no-del { display: none; color: #dc2626; font-size: 15px; line-height: 1; }
+tr:hover > td > .no-del { display: inline; }
+tr:hover > td > .no-n { display: none; }
