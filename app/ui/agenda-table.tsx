@@ -1,45 +1,36 @@
 "use client";
 
-import { memo, useRef, useState } from "react";
-import type { AgendaRow, Day } from "../lib/agenda-data";
+import { memo, useRef, useState, type CSSProperties } from "react";
+import { MONTHS_TITLE, type AgendaRow, type Day } from "../lib/agenda-data";
 import { COL_LABEL, COL_W, type ColKey } from "../lib/view-prefs";
-
-const TEAL = "#44808f";
-const LAV = "#d9d2e9";
-const GREEN = "#d9ead3";
-const BLACK = "#000";
-const rowNoColors = ["#dbe5f1", "#fff2cc", "#e2efda"];
+import { IconExpand, IconPaperclip, IconTrash } from "./icons";
 
 export type Month = { name: string; days: Day[] };
 
-const stickyLeft = (left: number, w: number): React.CSSProperties => ({
+const stickyLeft = (left: number, w: number): CSSProperties => ({
   position: "sticky",
   left,
   width: w,
   minWidth: w,
   maxWidth: w,
-  zIndex: 2,
 });
 
-/* ---------- Kolom + header: dirender sekali per (tahun, layout, zoom) ---------- */
+/* ---------- Kolom + header: dirender sekali per (tahun, layout, zoom, hari ini) ---------- */
 export const TableHead = memo(function TableHead({
-  year,
   months,
   cols,
   lefts,
+  leftTotal,
   dayW,
+  todayIso,
 }: {
-  year: number;
   months: Month[];
   cols: ColKey[];
   lefts: number[];
+  leftTotal: number;
   dayW: number;
+  todayIso: string;
 }) {
-  const hasLink = cols.includes("link");
-  const plain = cols.filter((c) => c !== "link");
-  const plainW = plain.reduce((a, c) => a + COL_W[c], 0);
-  const linkLeft = lefts[cols.indexOf("link")];
-
   return (
     <>
       <colgroup>
@@ -49,51 +40,35 @@ export const TableHead = memo(function TableHead({
         {months.flatMap((m) => m.days.map((d) => <col key={d.iso} style={{ width: dayW }} />))}
       </colgroup>
       <thead>
-        <tr style={{ height: 21 }}>
-          {plain.length > 0 && (
+        <tr>
+          {cols.map((c, i) => (
             <th
+              key={c}
               rowSpan={3}
-              colSpan={plain.length}
-              className="border-b border-r border-black/40 text-center font-bold tracking-wide text-white"
-              style={{ ...stickyLeft(0, plainW), background: TEAL, top: 0, zIndex: 5 }}
+              className={`lh ${i === cols.length - 1 ? "edge" : ""}`}
+              style={{ ...stickyLeft(lefts[i], COL_W[c]), textAlign: c === "no" ? "center" : "left", paddingLeft: c === "no" ? 0 : 8 }}
             >
-              ANNUAL AGENDA {year}
+              {COL_LABEL[c]}
             </th>
-          )}
-          {hasLink && (
-            <th
-              rowSpan={3}
-              className="border-b border-r-2 border-b-black/40 border-r-black bg-[#ff6a00] px-1 text-center text-[13px] font-bold leading-[1.15] text-black"
-              style={{ ...stickyLeft(linkLeft, COL_W.link), top: 0, zIndex: 5, background: "#ff6a00" }}
-            >
-              Lampiran (Undangan, Link Meeting, Surat Tugas, dst)
-            </th>
-          )}
-          {months.map((m) => (
-            <th
-              key={m.name}
-              colSpan={m.days.length}
-              className="sticky top-0 z-[3] border-b border-r-2 border-b-black/40 border-r-black text-center text-[13px] font-bold"
-              style={{ background: GREEN, height: 21 }}
-            >
-              {m.name} {year}
+          ))}
+          {months.map((m, mi) => (
+            <th key={m.name} colSpan={m.days.length} className={`mh ${mi % 2 ? "alt" : ""}`}>
+              <span className="mh-label" style={{ left: leftTotal + 10 }}>
+                {MONTHS_TITLE[mi]}
+              </span>
             </th>
           ))}
         </tr>
-        <tr style={{ height: 21 }}>
+        <tr>
           {months.flatMap((m) =>
             m.days.map((d) => (
-              <th
-                key={d.iso}
-                className={`dh ${d.weekend ? "dc-we" : ""} ${d.first ? "dc-first" : ""}`}
-                style={{ top: 21 }}
-              >
+              <th key={d.iso} scope="col" className={`wh ${d.weekend ? "we" : ""} ${d.first ? "first" : ""}`}>
                 {d.letter}
               </th>
             )),
           )}
         </tr>
-        <tr style={{ height: 21 }}>
+        <tr>
           {months.flatMap((m) =>
             m.days.map((d) => (
               <th
@@ -101,39 +76,10 @@ export const TableHead = memo(function TableHead({
                 data-iso={d.iso}
                 data-head="1"
                 title="Lihat agenda minggu dan bulan ini"
-                className={`dh ${d.weekend ? "dc-we" : ""} ${d.first ? "dc-first" : ""}`}
-                style={{ top: 42, borderBottomColor: BLACK }}
+                className={`dh ${d.weekend ? "we" : ""} ${d.first ? "first" : ""}`}
               >
-                {d.day}
+                {d.iso === todayIso ? <span className="tb">{d.day}</span> : d.day}
               </th>
-            )),
-          )}
-        </tr>
-        <tr style={{ height: 21 }}>
-          {cols.map((c, i) => (
-            <th
-              key={c}
-              className="border-b-2 border-r border-b-black px-1 font-bold"
-              style={{
-                ...stickyLeft(lefts[i], COL_W[c]),
-                background: LAV,
-                top: 63,
-                zIndex: 5,
-                textAlign: c === "no" ? "center" : "left",
-                borderRightColor: c === "link" ? BLACK : "rgba(0,0,0,.5)",
-                borderRightWidth: c === "link" ? 2 : 1,
-              }}
-            >
-              {COL_LABEL[c]}
-            </th>
-          ))}
-          {months.flatMap((m) =>
-            m.days.map((d) => (
-              <th
-                key={d.iso}
-                className="sticky z-[3] border-b-2 border-r"
-                style={{ top: 63, background: LAV, borderColor: "#d0d0d0", borderBottomColor: BLACK, borderLeft: d.first ? `2px solid ${BLACK}` : undefined }}
-              />
             )),
           )}
         </tr>
@@ -194,60 +140,74 @@ function CellInput({
           e.currentTarget.blur();
         }
       }}
-      className="h-full w-full bg-transparent px-1 text-[13px] outline-none focus:bg-yellow-50"
+      className="cellin"
     />
   );
 }
 
 /* ---------- Baris: hanya dirender ulang bila datanya sendiri berubah ---------- */
-const muted = (t: string) => <span className="text-black/30">{t}</span>;
-
 function leftCell(
   c: ColKey,
   r: AgendaRow | null,
   idx: number,
   color: string,
   confirming: boolean,
+  hint: boolean,
   onField: FieldHandler,
 ) {
   switch (c) {
     case "no":
+      if (confirming)
+        return (
+          <button type="button" data-del="1" className="del-confirm" aria-label={`Konfirmasi hapus agenda ${idx + 1}`}>
+            Hapus?
+          </button>
+        );
       return (
-        <>
-          <span className={confirming ? "hidden" : "no-n"}>{idx + 1}</span>
+        <div className="no-wrap">
+          <span className="no-n">{r ? idx + 1 : ""}</span>
           {r && (
-            <button
-              type="button"
-              data-del="1"
-              aria-label={`Hapus agenda ${idx + 1}`}
-              className={confirming ? "font-bold text-red-600" : "no-del"}
-            >
-              {confirming ? "Yakin?" : "×"}
-            </button>
+            <span className="rowact">
+              <button type="button" data-detail="1" aria-label={`Lihat detail agenda ${idx + 1}`} title="Lihat detail">
+                <IconExpand size={14} />
+              </button>
+              <button type="button" data-del="1" aria-label={`Hapus agenda ${idx + 1}`} title="Hapus">
+                <IconTrash size={14} />
+              </button>
+            </span>
           )}
-        </>
+        </div>
       );
     case "kegiatan":
-      return <CellInput id={r?.id ?? null} field="kegiatan" value={r?.kegiatan ?? ""} onField={onField} />;
+      return (
+        <CellInput
+          id={r?.id ?? null}
+          field="kegiatan"
+          value={r?.kegiatan ?? ""}
+          onField={onField}
+          placeholder={hint ? "Ketik kegiatan baru lalu tekan Enter" : undefined}
+        />
+      );
     case "topic":
       return (
         <div className="flex h-full items-center">
-          {r?.topic ? <span className="ml-1 h-2 w-2 flex-none rounded-full" style={{ background: color }} /> : null}
+          {r?.topic ? <i className="ml-2 block h-2.5 w-2.5 flex-none rounded-full" style={{ background: color }} /> : null}
           <CellInput id={r?.id ?? null} field="topic" value={r?.topic ?? ""} onField={onField} list="topic-list" />
         </div>
       );
     case "date":
-      return r ? r.date || muted("Pilih tanggal") : null;
+      return r ? r.date || <span className="ph">Pilih tanggal</span> : null;
     case "jam":
-      return r ? r.jam || muted("Pilih jam") : null;
+      return r ? r.jam || <span className="ph-h">Pilih jam</span> : null;
     case "link":
       if (!r) return null;
       return r.lampiran.length ? (
-        <span className="font-medium text-[#1a6aa8]">
+        <span className="att-chip">
+          <IconPaperclip size={14} />
           {r.lampiran.length === 1 ? r.lampiran[0].type : `${r.lampiran[0].type} +${r.lampiran.length - 1}`}
         </span>
       ) : (
-        muted("+ Lampiran")
+        <span className="ph-h">+ Lampiran</span>
       );
   }
 }
@@ -255,6 +215,7 @@ function leftCell(
 export const AgendaRowView = memo(function AgendaRowView({
   row,
   idx,
+  hint,
   markIso,
   color,
   dim,
@@ -270,6 +231,7 @@ export const AgendaRowView = memo(function AgendaRowView({
 }: {
   row: AgendaRow | null;
   idx: number;
+  hint: boolean;
   markIso: string | null;
   color: string;
   dim: boolean;
@@ -293,14 +255,14 @@ export const AgendaRowView = memo(function AgendaRowView({
         key={d.iso}
         data-iso={d.iso}
         data-m={marked ? row?.id : undefined}
-        title={marked && row ? `${row.kegiatan}${row.jam ? ` · ${row.jam}` : ""}` : undefined}
-        className={`dc ${d.weekend ? "dc-we" : ""} ${d.iso === todayIso ? "dc-today" : ""} ${d.first ? "dc-first" : ""} ${marked ? "dc-mark" : ""}`}
-        style={marked ? { background: color } : undefined}
+        title={marked && row ? `${row.kegiatan}${row.jam ? `, ${row.jam}` : ""}` : undefined}
+        className={`dc ${d.weekend ? "we" : ""} ${d.iso === todayIso ? "today" : ""} ${d.first ? "first" : ""} ${marked ? "mark" : ""}`}
+        style={marked ? ({ "--mark": color } as CSSProperties) : undefined}
       />,
     );
   }
   return (
-    <tr className={row ? "" : "is-empty"} style={{ height: rowH, opacity: dim ? 0.25 : 1 }}>
+    <tr className={row ? "" : "is-empty"} style={{ height: rowH, opacity: dim ? 0.28 : 1 }}>
       {cols.map((c, i) => {
         const input = c === "kegiatan" || c === "topic";
         return (
@@ -309,18 +271,14 @@ export const AgendaRowView = memo(function AgendaRowView({
             data-left="1"
             data-col={c}
             data-r={row?.id}
-            className="lc"
+            className={`lc ${c === "no" ? "no" : ""} ${i === cols.length - 1 ? "edge" : ""}`}
             style={{
               ...stickyLeft(lefts[i], COL_W[c]),
-              padding: input ? 0 : undefined,
-              textAlign: c === "no" || c === "date" || c === "jam" ? "center" : "left",
-              fontWeight: c === "no" ? 600 : undefined,
-              fontSize: 13,
-              ...(c === "no" ? { background: rowNoColors[Math.floor(idx / 6) % 3], borderRightColor: "rgba(0,0,0,.4)" } : null),
-              ...(c === "link" ? { borderRightColor: BLACK, borderRightWidth: 2 } : null),
+              ...(input ? { padding: 0 } : null),
+              textAlign: c === "no" ? "center" : "left",
             }}
           >
-            {leftCell(c, row, idx, color, confirming, onField)}
+            {leftCell(c, row, idx, color, confirming, hint, onField)}
           </td>
         );
       })}

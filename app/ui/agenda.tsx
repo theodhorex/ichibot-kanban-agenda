@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   DEFAULT_TOPIC_COLOR,
-  MIN_DISPLAY_ROWS,
+  MONTHS_TITLE,
   buildYear,
   dmyToIso,
   emptyRow,
@@ -26,12 +26,28 @@ import {
   parsePrefs,
   type Prefs,
 } from "../lib/view-prefs";
+import { DetailDialog } from "./agenda-detail";
 import AgendaDrawer from "./agenda-drawer";
 import AgendaListPanel from "./agenda-list-panel";
 import { AgendaRowView, TableHead, type FieldHandler } from "./agenda-table";
 import AttachmentsDialog from "./attachments-dialog";
 import DatePicker from "./date-picker";
 import DayDialog from "./day-dialog";
+import {
+  IconAlert,
+  IconCheck,
+  IconChevronLeft,
+  IconChevronRight,
+  IconDownload,
+  IconFile,
+  IconList,
+  IconPlus,
+  IconSearch,
+  IconSheet,
+  IconSpinner,
+  LogoMark,
+} from "./icons";
+import { Dropdown, MenuItem } from "./menu";
 import { Popover, anchorOf, type Anchor } from "./popup";
 import TimePicker from "./time-picker";
 import ViewMenu from "./view-menu";
@@ -68,8 +84,11 @@ export default function Agenda() {
   const [range, setRange] = useState({ from: 0, to: 90 });
   const [editing, setEditing] = useState<Editing>(null);
   const [dayIso, setDayIso] = useState<string | null>(null);
-  const [exportOpen, setExportOpen] = useState(false);
   const [exporting, setExporting] = useState(false);
+  const [detailId, setDetailId] = useState<string | null>(null);
+  const [topicFilter, setTopicFilter] = useState<string | null>(null);
+  const [activeMonth, setActiveMonth] = useState(0);
+  const [viewH, setViewH] = useState(600);
   const [picker, setPicker] = useState<Picker>(null);
   const [attachId, setAttachId] = useState<string | null>(null);
   const [confirmId, setConfirmId] = useState<string | null>(null);
@@ -232,10 +251,30 @@ export default function Agenda() {
       v.toLowerCase().includes(q),
     );
 
-  const display = useMemo<(AgendaRow | null)[]>(
-    () => [...sorted, ...Array.from({ length: Math.max(0, MIN_DISPLAY_ROWS - sorted.length) }, () => null)],
-    [sorted],
-  );
+  // Baris kosong mengisi sisa tinggi layar supaya selalu ada "kanvas" untuk diklik.
+  const display = useMemo<(AgendaRow | null)[]>(() => {
+    const target = Math.ceil(viewH / rowH) + 1;
+    return [...sorted, ...Array.from({ length: Math.max(4, target - sorted.length) }, () => null)];
+  }, [sorted, viewH, rowH]);
+
+  const topicCounts = useMemo(() => {
+    const m = new Map<string, number>();
+    for (const r of rows) {
+      const t = r.topic.trim();
+      if (t) m.set(t, (m.get(t) ?? 0) + 1);
+    }
+    return m;
+  }, [rows]);
+  const monthCounts = useMemo(() => {
+    const c = Array<number>(12).fill(0);
+    for (const r of rows) {
+      const iso = dmyToIso(r.date);
+      if (iso && iso.startsWith(`${year}-`)) c[Number(iso.slice(5, 7)) - 1]++;
+    }
+    return c;
+  }, [rows, year]);
+  const yearCount = monthCounts.reduce((a, b) => a + b, 0);
+  const nowMonth = todayIso.startsWith(`${year}-`) ? Number(todayIso.slice(5, 7)) - 1 : -1;
 
   /* ---------- scroll + jendela horizontal ---------- */
   const measure = useCallback(() => {
@@ -246,7 +285,10 @@ export default function Agenda() {
     const from = Math.max(0, Math.floor((first - OVERSCAN) / QUANT) * QUANT);
     const to = Math.min(days.length, Math.ceil((last + OVERSCAN) / QUANT) * QUANT);
     setRange((r) => (r.from === from && r.to === to ? r : { from, to }));
-  }, [dayW, days.length]);
+    const spy = days[Math.min(days.length - 1, Math.max(0, first + 3))];
+    if (spy) setActiveMonth(Number(spy.iso.slice(5, 7)) - 1);
+    setViewH(el.clientHeight);
+  }, [dayW, days]);
 
   const onScroll = () => {
     if (raf.current) return;
@@ -269,7 +311,7 @@ export default function Agenda() {
       const i = dayIndex.get(iso);
       const el = scroller.current;
       if (i === undefined || !el) return;
-      el.scrollTo({ left: Math.max(0, i * dayW - 8), behavior: smooth ? "smooth" : "auto" });
+      el.scrollTo({ left: i * dayW, behavior: smooth ? "smooth" : "auto" });
     },
     [dayIndex, dayW],
   );
@@ -372,6 +414,10 @@ export default function Agenda() {
     } else if (d.col) {
       const id = d.r;
       if (d.col === "no") {
+        if (id && target.closest("[data-detail]")) {
+          setDetailId(id);
+          return;
+        }
         if (id && onDel) {
           if (confirmId === id) deleteRow(id);
           else setConfirmId(id);
@@ -388,7 +434,6 @@ export default function Agenda() {
   };
 
   const runExport = async (kind: "xlsx" | "pdf") => {
-    setExportOpen(false);
     setExporting(true);
     try {
       await (kind === "xlsx" ? exportXlsx(sorted, year) : exportPdf(sorted, year));
@@ -397,113 +442,172 @@ export default function Agenda() {
     }
   };
 
-  const btn =
-    "rounded-md border border-black/15 bg-white px-2.5 py-1 text-[13px] font-medium hover:bg-black/5 active:bg-black/10";
+  const saveLabel =
+    dbState === "loading"
+      ? "Memuat dari database"
+      : dbState === "error"
+        ? "Database tidak terhubung"
+        : saveState === "saving"
+          ? "Menyimpan"
+          : saveState === "error"
+            ? "Gagal menyimpan"
+            : "Tersimpan";
+  const saveBad = dbState === "error" || saveState === "error";
+  const detailRow = detailId ? rows.find((r) => r.id === detailId) : undefined;
 
   return (
-    <div className="flex h-full flex-col bg-white text-black">
-      <div className="flex flex-wrap items-center gap-2 border-b border-black/10 px-3 py-2">
-        <button
-          className="rounded-md bg-[#44808f] px-3 py-1 text-[13px] font-semibold text-white hover:opacity-90"
-          onClick={() => openAdd()}
-          disabled={dbState !== "ready"}
-        >
-          + Tambah agenda
-        </button>
-        {!isList && (
-          <button className={btn} onClick={() => setListOpen((v) => !v)} aria-pressed={listOpen}>
-            ☰ Daftar agenda ({rows.length})
-          </button>
-        )}
+    <div className="flex h-full flex-col bg-surface text-ink">
+      <header className="border-b border-line bg-surface">
+        <div className="flex flex-wrap items-center gap-x-3 gap-y-2 px-4 pb-2 pt-3">
+          <div className="flex items-center gap-2.5 pr-1">
+            <LogoMark />
+            <h1 className="text-[17px] font-bold leading-none tracking-tight">Annual Agenda</h1>
+          </div>
 
-        <div className="flex items-center rounded-md border border-black/15">
-          <button className="px-2 py-1 hover:bg-black/5" onClick={() => setYear(year - 1)} aria-label="Tahun sebelumnya">
-            ‹
+          <div className="flex items-center gap-0.5" role="group" aria-label="Pilih tahun">
+            <button className="btn btn-ghost btn-icon" onClick={() => setYear(year - 1)} aria-label="Tahun sebelumnya">
+              <IconChevronLeft />
+            </button>
+            <span className="min-w-[64px] text-center text-[22px] font-extrabold leading-none tabular-nums" aria-live="polite">
+              {year}
+            </span>
+            <button className="btn btn-ghost btn-icon" onClick={() => setYear(year + 1)} aria-label="Tahun berikutnya">
+              <IconChevronRight />
+            </button>
+          </div>
+          <button className="btn" onClick={() => goTo(todayIso || isoOf(new Date()))}>
+            Hari ini
           </button>
-          <span className="min-w-[44px] text-center text-[13px] font-bold">{year}</span>
-          <button className="px-2 py-1 hover:bg-black/5" onClick={() => setYear(year + 1)} aria-label="Tahun berikutnya">
-            ›
-          </button>
+
+          <div className="relative min-w-[150px] max-w-[320px] flex-1">
+            <IconSearch className="pointer-events-none absolute left-2.5 top-1/2 -translate-y-1/2 text-muted" />
+            <input
+              type="search"
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              placeholder="Cari agenda"
+              aria-label="Cari agenda"
+              className="field pl-8"
+            />
+          </div>
+
+          <div className="ml-auto flex flex-wrap items-center gap-2">
+            <span
+              role="status"
+              className={`inline-flex items-center gap-1.5 text-[12.5px] font-medium ${saveBad ? "text-danger" : "text-muted"}`}
+            >
+              {dbState === "loading" || saveState === "saving" ? (
+                <IconSpinner size={14} />
+              ) : saveBad ? (
+                <IconAlert size={14} />
+              ) : (
+                <IconCheck size={14} className="text-ok" />
+              )}
+              <span className="hidden sm:inline">{saveLabel}</span>
+              <span className="sr-only sm:hidden">{saveLabel}</span>
+            </span>
+            {!isList && (
+              <button className="btn" onClick={() => setListOpen((v) => !v)} aria-pressed={listOpen}>
+                <IconList />
+                <span className="hidden md:inline">Daftar agenda</span>
+                <span className="md:hidden sr-only">Daftar agenda</span>
+                <span className="text-muted">{rows.length}</span>
+              </button>
+            )}
+            <ViewMenu prefs={prefs} onChange={setPrefs} />
+            <Dropdown
+              label={exporting ? "Mengekspor" : "Ekspor"}
+              icon={exporting ? <IconSpinner /> : <IconDownload />}
+              width={260}
+            >
+              {(close) => (
+                <>
+                  <MenuItem
+                    icon={<IconSheet />}
+                    title="Excel (.xlsx)"
+                    hint={`Tabel agenda ${year} dengan kalender`}
+                    onClick={() => {
+                      close();
+                      runExport("xlsx");
+                    }}
+                  />
+                  <MenuItem
+                    icon={<IconFile />}
+                    title="PDF (.pdf)"
+                    hint={`Dokumen siap cetak untuk ${year}`}
+                    onClick={() => {
+                      close();
+                      runExport("pdf");
+                    }}
+                  />
+                </>
+              )}
+            </Dropdown>
+            <button className="btn btn-primary" onClick={() => openAdd()} disabled={dbState !== "ready"}>
+              <IconPlus size={16} /> Tambah agenda
+            </button>
+          </div>
         </div>
-        <button className={btn} onClick={() => goTo(isoOf(new Date()))}>
-          Hari ini
-        </button>
-        <input
-          value={query}
-          onChange={(e) => setQuery(e.target.value)}
-          placeholder="Cari kegiatan…"
-          aria-label="Cari kegiatan"
-          className="w-44 rounded-md border border-black/15 px-2.5 py-1 text-[13px] outline-none focus:border-black/40"
-        />
-        <div className="flex flex-wrap items-center gap-3 pl-1">
-          {topics.map((t) => (
-            <label key={t} className="flex cursor-pointer items-center gap-1.5 text-[13px]">
-              <input
-                type="color"
-                value={colorOf(t)}
-                onChange={(e) => setColors((c) => ({ ...c, [t]: e.target.value }))}
-                className="h-4 w-4 cursor-pointer rounded border-0 bg-transparent p-0"
-                aria-label={`Warna topik ${t}`}
-              />
-              {t}
-            </label>
-          ))}
-        </div>
-        <span className="ml-auto hidden text-[12px] text-black/45 2xl:inline">
-          {isList
-            ? "Ketik langsung di baris kosong, atau klik sel kosong pada tanggal"
-            : "Klik sel kosong pada tanggal untuk menambah agenda"}
-        </span>
-        <span
-          role="status"
-          className={`text-[12px] ${saveState === "error" || dbState === "error" ? "text-red-600" : "text-black/45"}`}
-        >
-          {dbState === "loading"
-            ? "Memuat dari database…"
-            : dbState === "error"
-              ? "Database tidak terhubung"
-              : saveState === "saving"
-                ? "Menyimpan…"
-                : saveState === "error"
-                  ? "Gagal menyimpan"
-                  : "✓ Tersimpan"}
-        </span>
-        <ViewMenu prefs={prefs} onChange={setPrefs} />
-        <div className="relative">
-          <button
-            className={btn}
-            disabled={exporting}
-            aria-haspopup="menu"
-            aria-expanded={exportOpen}
-            onClick={() => setExportOpen((v) => !v)}
-          >
-            {exporting ? "Mengekspor…" : "Ekspor ▾"}
-          </button>
-          {exportOpen && (
+
+        <div className="flex items-center gap-1 overflow-x-auto px-3 pb-2 pt-0.5 [scrollbar-width:none]">
+          <nav className="flex flex-none items-center gap-0.5" aria-label={`Bulan di ${year}`}>
+            {MONTHS_TITLE.map((name, i) => (
+              <button
+                key={name}
+                type="button"
+                className={`mp ${i === nowMonth ? "now" : ""}`}
+                aria-current={i === activeMonth}
+                title={`Ke ${name} ${year}`}
+                onClick={() => scrollToIso(`${year}-${pad2(i + 1)}-01`)}
+              >
+                {name.slice(0, 3)}
+                {monthCounts[i] > 0 && <span className="n">{monthCounts[i]}</span>}
+              </button>
+            ))}
+          </nav>
+          {topics.length > 0 && (
             <>
-              <div className="fixed inset-0 z-40" onClick={() => setExportOpen(false)} />
-              <div role="menu" className="absolute right-0 top-full z-50 mt-1 w-40 rounded-lg border border-black/10 bg-white py-1 shadow-lg">
-                <button role="menuitem" className="block w-full px-3 py-1.5 text-left text-[13px] hover:bg-black/5" onClick={() => runExport("xlsx")}>
-                  Excel (.xlsx)
-                </button>
-                <button role="menuitem" className="block w-full px-3 py-1.5 text-left text-[13px] hover:bg-black/5" onClick={() => runExport("pdf")}>
-                  PDF (.pdf)
-                </button>
+              <span className="mx-2 h-5 w-px flex-none bg-line-strong" aria-hidden />
+              <div className="flex flex-none items-center gap-1.5" role="group" aria-label="Topik">
+                {topics.map((t) => (
+                  <div key={t} className="chip" data-on={topicFilter === t}>
+                    <label className="sw" title={`Ubah warna topik ${t}`}>
+                      <input
+                        type="color"
+                        value={colorOf(t)}
+                        onChange={(e) => setColors((c) => ({ ...c, [t]: e.target.value }))}
+                        className="sr-only-input"
+                        aria-label={`Warna topik ${t}`}
+                      />
+                      <i style={{ background: colorOf(t) }} />
+                    </label>
+                    <button
+                      type="button"
+                      aria-pressed={topicFilter === t}
+                      title={topicFilter === t ? "Tampilkan semua topik" : `Sorot hanya topik ${t}`}
+                      onClick={() => setTopicFilter((f) => (f === t ? null : t))}
+                    >
+                      {t}
+                      <span className="n">{topicCounts.get(t)}</span>
+                    </button>
+                  </div>
+                ))}
               </div>
             </>
           )}
         </div>
-      </div>
+      </header>
 
-      {(dbState === "error" || saveState === "error") && (
-        <div role="alert" className="flex flex-wrap items-center gap-3 border-b border-red-200 bg-red-50 px-3 py-2 text-[13px] text-red-800">
+      {saveBad && (
+        <div role="alert" className="flex flex-wrap items-center gap-3 border-b border-danger/25 bg-danger-tint px-4 py-2.5 text-[13.5px] text-danger">
+          <IconAlert className="flex-none" />
           <span className="min-w-0 flex-1">
             {dbState === "error"
               ? `Tidak bisa memuat dari database: ${dbError}. Pastikan MariaDB/MySQL berjalan dan DATABASE_URL di .env.local benar.`
               : "Perubahan belum tersimpan ke database. Data masih ada di layar; jangan tutup halaman ini."}
           </span>
           <button
-            className="rounded-md border border-red-300 bg-white px-2.5 py-1 font-medium hover:bg-red-100"
+            className="btn btn-sm"
             onClick={() => {
               if (dbState === "error") {
                 setDbState("loading");
@@ -520,40 +624,69 @@ export default function Agenda() {
           <option key={t} value={t} />
         ))}
       </datalist>
-      <div
-        ref={scroller}
-        onScroll={onScroll}
-        className={`min-h-0 flex-1 overflow-auto ${dbState === "ready" ? "" : "pointer-events-none opacity-60"}`}
-        aria-busy={dbState !== "ready"}
-      >
-        <table
-          onClick={onTableClick}
-          className="border-separate border-spacing-0 text-[13px]"
-          style={{ tableLayout: "fixed", width: total + days.length * dayW }}
+      <div className="relative min-h-0 flex-1">
+        <div
+          ref={scroller}
+          onScroll={onScroll}
+          className={`cal-scroll h-full overflow-auto ${dbState === "ready" ? "" : "pointer-events-none opacity-60"}`}
+          aria-busy={dbState !== "ready"}
         >
-          <TableHead year={year} months={months} cols={cols} lefts={lefts} dayW={dayW} />
-          <tbody>
-            {display.map((r, i) => (
-              <AgendaRowView
-                key={r?.id ?? `e${i}`}
-                row={r}
-                idx={i}
-                markIso={r ? dmyToIso(r.date) : null}
-                color={r ? colorOf(r.topic.trim()) : DEFAULT_TOPIC_COLOR}
-                dim={r ? !matches(r) : false}
-                confirming={r ? confirmId === r.id : false}
-                onField={onField}
-                cols={cols}
-                lefts={lefts}
-                days={days}
-                from={range.from}
-                to={range.to}
-                rowH={rowH}
-                todayIso={todayIso}
-              />
-            ))}
-          </tbody>
-        </table>
+          <table onClick={onTableClick} className="cal" style={{ width: total + days.length * dayW }}>
+            <TableHead months={months} cols={cols} lefts={lefts} leftTotal={total} dayW={dayW} todayIso={todayIso} />
+            <tbody>
+              {display.map((r, i) => (
+                <AgendaRowView
+                  key={r?.id ?? `e${i}`}
+                  row={r}
+                  idx={i}
+                  hint={!r && i === sorted.length}
+                  markIso={r ? dmyToIso(r.date) : null}
+                  color={r ? colorOf(r.topic.trim()) : DEFAULT_TOPIC_COLOR}
+                  dim={r ? !matches(r) || (topicFilter !== null && r.topic.trim() !== topicFilter) : false}
+                  confirming={r ? confirmId === r.id : false}
+                  onField={onField}
+                  cols={cols}
+                  lefts={lefts}
+                  days={days}
+                  from={range.from}
+                  to={range.to}
+                  rowH={rowH}
+                  todayIso={todayIso}
+                />
+              ))}
+            </tbody>
+          </table>
+        </div>
+        {dbState === "ready" && yearCount === 0 && (
+          <div className="pointer-events-none absolute inset-x-0 top-[104px] flex" style={{ paddingLeft: total + 28 }}>
+            <div role="status" className="fade-in pointer-events-auto max-w-[340px] rounded-lg border border-line bg-surface p-5 shadow-float">
+              <h2 className="text-[16px] font-bold">Belum ada agenda di {year}</h2>
+              <p className="mt-1.5 text-[13.5px] text-ink-2">
+                {isList
+                  ? "Ketik di baris kosong, klik sel pada tanggal, atau gunakan tombol di bawah."
+                  : "Klik sel kosong pada tanggal, atau gunakan tombol di bawah."}
+                {rows.length > 0 && " Agenda di tahun lain tetap tersimpan."}
+              </p>
+              <button className="btn btn-primary mt-3" onClick={() => openAdd()}>
+                <IconPlus size={16} /> Tambah agenda
+              </button>
+            </div>
+          </div>
+        )}
+      {!isList && listOpen && (
+        <AgendaListPanel
+          rows={sorted}
+          colorOf={colorOf}
+          onClose={() => setListOpen(false)}
+          onAdd={() => openAdd()}
+          onPick={(id) => {
+            const row = rows.find((r) => r.id === id);
+            const iso = row ? dmyToIso(row.date) : null;
+            if (iso) goTo(iso);
+            setDetailId(id);
+          }}
+        />
+      )}
       </div>
 
       {picker &&
@@ -601,20 +734,6 @@ export default function Agenda() {
           }}
         />
       )}
-      {!isList && listOpen && (
-        <AgendaListPanel
-          rows={sorted}
-          colorOf={colorOf}
-          onClose={() => setListOpen(false)}
-          onAdd={() => openAdd()}
-          onPick={(id) => {
-            const row = rows.find((r) => r.id === id);
-            const iso = row ? dmyToIso(row.date) : null;
-            if (iso) goTo(iso);
-            openEdit(id);
-          }}
-        />
-      )}
       {editing && (
         <AgendaDrawer
           key={editing.row.id}
@@ -625,6 +744,17 @@ export default function Agenda() {
           onSave={saveRow}
           onDelete={deleteRow}
           onClose={() => setEditing(null)}
+        />
+      )}
+      {detailRow && (
+        <DetailDialog
+          row={detailRow}
+          color={colorOf(detailRow.topic.trim())}
+          onClose={() => setDetailId(null)}
+          onEdit={(id) => {
+            setDetailId(null);
+            openEdit(id);
+          }}
         />
       )}
       {dayIso && (
