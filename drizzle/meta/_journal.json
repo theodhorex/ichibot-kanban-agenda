@@ -1,0 +1,13 @@
+{
+  "version": "7",
+  "dialect": "mysql",
+  "entries": [
+    {
+      "idx": 0,
+      "version": "5",
+      "when": 1795039449548,
+      "tag": "0000_brown_quasar",
+      "breakpoints": true
+    }
+  ]
+}
