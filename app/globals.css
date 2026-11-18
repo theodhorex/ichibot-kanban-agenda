@@ -1,73 +1,589 @@
 @import "tailwindcss";
 
+/* ───────────── Design tokens ─────────────
+   Satu sumber kebenaran untuk warna, radius, dan bayangan.
+   Palet: kertas dingin + tinta biru-hitam + teal dalam; kuning hanya untuk "hari ini". */
+@theme {
+  --font-sans: var(--font-ui), ui-sans-serif, system-ui, sans-serif;
+
+  --color-ink: #14212b;
+  --color-ink-2: #3f4e59;
+  --color-muted: #66737d;
+  --color-faint: #98a3aa;
+  --color-line: #e1e6e4;
+  --color-line-strong: #c6cfcc;
+  --color-surface: #ffffff;
+  --color-surface-2: #f6f8f7;
+  --color-surface-3: #edf1ef;
+
+  --color-primary: #0b6e75;
+  --color-primary-hover: #095d63;
+  --color-primary-tint: #e2f0f1;
+  --color-primary-ink: #07474c;
+
+  --color-today: #f5b72f;
+  --color-today-tint: #fff4d1;
+  --color-weekend: #f2f4f3;
+  --color-weekend-ink: #b4483f;
+
+  --color-danger: #b42318;
+  --color-danger-tint: #fdeeed;
+  --color-ok: #067647;
+
+  --radius-sm: 6px;
+  --radius-md: 10px;
+  --radius-lg: 14px;
+
+  --shadow-float: 0 1px 2px rgb(20 33 43 / 0.08), 0 14px 34px -10px rgb(20 33 43 / 0.28);
+}
+
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  color-scheme: light;
 }
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+html,
+body {
+  height: 100%;
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: var(--font-geist-sans), Arial, Helvetica, sans-serif;
+  background: var(--color-surface);
+  color: var(--color-ink);
+  font-family: var(--font-sans);
+  font-size: 14px;
+  line-height: 1.45;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
 }
 
-/* ---- Annual agenda: kelas statis agar sel tidak membawa style inline ---- */
-.dc {
-  background: #fff;
-  border-bottom: 1px solid #d0d0d0;
-  border-right: 1px solid #d0d0d0;
-  cursor: pointer;
+:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
 }
-.dc:hover { background: #e8f1f4; }
-.dc.dc-we { background: #fdf1f1; }
-.dc.dc-today { background: #fff3b0; }
-.dc.dc-first, .dh.dc-first { border-left: 2px solid #000; }
-.dc.dc-mark:hover { filter: brightness(.92); }
+/* kontainer dialog hanya menerima fokus programatik; cincinnya dipakai kontrol di dalamnya */
+[tabindex="-1"]:focus-visible {
+  outline: none;
+}
 
+::selection {
+  background: var(--color-primary-tint);
+}
+
+/* ───────────── Komponen dasar ───────────── */
+@layer components {
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    height: 34px;
+    padding: 0 12px;
+    border: 1px solid var(--color-line-strong);
+    border-radius: var(--radius-sm);
+    background: var(--color-surface);
+    color: var(--color-ink);
+    font-size: 13.5px;
+    font-weight: 560;
+    white-space: nowrap;
+    cursor: pointer;
+    transition: background-color 0.12s, border-color 0.12s, color 0.12s;
+  }
+  .btn:hover:not(:disabled) {
+    background: var(--color-surface-3);
+  }
+  .btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+  .btn[aria-pressed="true"],
+  .btn[aria-expanded="true"] {
+    background: var(--color-primary-tint);
+    border-color: var(--color-primary);
+    color: var(--color-primary-ink);
+  }
+  .btn-primary {
+    background: var(--color-primary);
+    border-color: var(--color-primary);
+    color: #fff;
+  }
+  .btn-primary:hover:not(:disabled) {
+    background: var(--color-primary-hover);
+  }
+  .btn-ghost {
+    border-color: transparent;
+    background: transparent;
+  }
+  .btn-danger {
+    color: var(--color-danger);
+  }
+  .btn-danger:hover:not(:disabled) {
+    background: var(--color-danger-tint);
+  }
+  .btn-danger-solid {
+    background: var(--color-danger);
+    border-color: var(--color-danger);
+    color: #fff;
+  }
+  .btn-danger-solid:hover:not(:disabled) {
+    background: #8f1b11;
+  }
+  .btn-sm {
+    height: 28px;
+    padding: 0 9px;
+    font-size: 12.5px;
+  }
+  .btn-icon {
+    width: 34px;
+    padding: 0;
+  }
+  .btn-icon.btn-sm {
+    width: 28px;
+  }
+
+  .field {
+    width: 100%;
+    height: 36px;
+    padding: 0 10px;
+    border: 1px solid var(--color-line-strong);
+    border-radius: var(--radius-sm);
+    background: var(--color-surface);
+    color: var(--color-ink);
+    font-size: 14px;
+    transition: border-color 0.12s, box-shadow 0.12s;
+  }
+  .field::placeholder {
+    color: var(--color-muted);
+    opacity: 0.8;
+  }
+  .field:focus {
+    outline: none;
+    border-color: var(--color-primary);
+    box-shadow: 0 0 0 3px var(--color-primary-tint);
+  }
+  .field[aria-invalid="true"] {
+    border-color: var(--color-danger);
+  }
+  textarea.field {
+    height: auto;
+    padding: 8px 10px;
+    line-height: 1.4;
+    resize: none;
+  }
+  .label {
+    display: block;
+    margin-bottom: 6px;
+    color: var(--color-ink-2);
+    font-size: 13px;
+    font-weight: 600;
+  }
+
+  /* Tab bulan (rel navigasi) */
+  .mp {
+    position: relative;
+    display: inline-flex;
+    flex: none;
+    align-items: center;
+    gap: 6px;
+    height: 30px;
+    padding: 0 10px;
+    border-radius: var(--radius-sm);
+    color: var(--color-ink-2);
+    font-size: 13px;
+    font-weight: 560;
+    white-space: nowrap;
+    cursor: pointer;
+    transition: background-color 0.12s;
+  }
+  .mp:hover {
+    background: var(--color-surface-3);
+  }
+  .mp[aria-current="true"] {
+    background: var(--color-primary-tint);
+    color: var(--color-primary-ink);
+  }
+  .mp .n {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 18px;
+    height: 18px;
+    padding: 0 5px;
+    border-radius: 9px;
+    background: var(--color-surface-3);
+    color: var(--color-ink-2);
+    font-size: 11px;
+    font-weight: 650;
+  }
+  .mp[aria-current="true"] .n {
+    background: var(--color-surface);
+    color: var(--color-primary-ink);
+  }
+  .mp.now::after {
+    content: "";
+    position: absolute;
+    bottom: 1px;
+    left: 50%;
+    width: 14px;
+    height: 3px;
+    margin-left: -7px;
+    border-radius: 2px;
+    background: var(--color-today);
+  }
+
+  /* Chip topik: warna (ubah) + nama (filter) */
+  .chip {
+    position: relative;
+    display: inline-flex;
+    flex: none;
+    align-items: center;
+    height: 28px;
+    border: 1px solid var(--color-line-strong);
+    border-radius: 999px;
+    background: var(--color-surface);
+    font-size: 13px;
+    font-weight: 560;
+    overflow: hidden;
+  }
+  .chip[data-on="true"] {
+    border-color: var(--color-primary);
+    background: var(--color-primary-tint);
+    color: var(--color-primary-ink);
+  }
+  .chip .sw {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    align-self: stretch;
+    padding: 0 6px 0 9px;
+    cursor: pointer;
+  }
+  .chip .sw:focus-within {
+    outline: 2px solid var(--color-primary);
+    outline-offset: -2px;
+    border-radius: 999px 0 0 999px;
+  }
+  .chip .sw i {
+    display: block;
+    width: 12px;
+    height: 12px;
+    border-radius: 999px;
+    box-shadow: 0 0 0 2px var(--color-surface);
+  }
+  .chip > button {
+    display: inline-flex;
+    align-items: center;
+    align-self: stretch;
+    gap: 6px;
+    padding: 0 10px 0 2px;
+    cursor: pointer;
+  }
+  .chip > button .n {
+    color: var(--color-muted);
+    font-size: 11.5px;
+    font-weight: 600;
+  }
+
+  .sr-only-input {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+    opacity: 0;
+  }
+
+  .att-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    color: var(--color-primary-ink);
+    font-size: 12.5px;
+    font-weight: 600;
+  }
+}
+
+/* ───────────── Kalender (tabel) ─────────────
+   Kelas statis agar sel tidak membawa style inline; hanya sel bertanda yang memakai --mark. */
+table.cal {
+  border-collapse: separate;
+  border-spacing: 0;
+  table-layout: fixed;
+  font-size: 13px;
+  font-variant-numeric: tabular-nums;
+}
+
+.cal-scroll {
+  scrollbar-width: thin;
+  scrollbar-color: var(--color-line-strong) transparent;
+}
+
+/* header kiri */
+.lh {
+  position: sticky;
+  top: 0;
+  z-index: 5;
+  padding: 0 8px 8px;
+  border-bottom: 1px solid var(--color-line-strong);
+  border-right: 1px solid var(--color-line);
+  background: var(--color-surface-2);
+  color: var(--color-ink-2);
+  font-size: 12.5px;
+  font-weight: 650;
+  text-align: left;
+  vertical-align: bottom;
+}
+.lh.edge,
+.lc.edge {
+  border-right: 1px solid var(--color-line-strong);
+}
+
+/* header bulan / hari */
+.mh {
+  position: sticky;
+  top: 0;
+  z-index: 3;
+  height: 28px;
+  padding: 0;
+  border-bottom: 1px solid var(--color-line);
+  border-left: 1px solid var(--color-line-strong);
+  background: #eef3f1;
+  text-align: left;
+}
+.mh.alt {
+  background: #e4ece9;
+}
+.mh-label {
+  position: sticky;
+  display: inline-block;
+  color: var(--color-ink);
+  font-size: 13px;
+  font-weight: 700;
+  line-height: 28px;
+  white-space: nowrap;
+}
+.wh,
 .dh {
   position: sticky;
   z-index: 3;
-  border-bottom: 1px solid #d0d0d0;
-  border-right: 1px solid #d0d0d0;
-  background: #fff;
-  font-size: 12px;
-  font-weight: 400;
+  border-right: 1px solid var(--color-line);
+  background: var(--color-surface);
+  text-align: center;
+}
+.wh {
+  top: 28px;
+  height: 18px;
+  color: var(--color-muted);
+  font-size: 11px;
+  font-weight: 500;
+}
+.dh {
+  top: 46px;
+  height: 26px;
+  border-bottom: 1px solid var(--color-line-strong);
+  font-size: 12.5px;
+  font-weight: 500;
   cursor: pointer;
 }
-.dh.dc-we { background: #f4cccc; }
-.dh:hover { background: #e8f1f4; }
+.dh:hover {
+  background: var(--color-primary-tint);
+}
+.wh.we,
+.dh.we {
+  background: var(--color-weekend);
+  color: var(--color-weekend-ink);
+}
+.wh.first,
+.dh.first {
+  border-left: 1px solid var(--color-line-strong);
+}
+.dh .tb {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 20px;
+  height: 20px;
+  border-radius: 999px;
+  background: var(--color-today);
+  color: #3b2a00;
+  font-weight: 750;
+}
 
-.lc {
-  background: #fff;
-  border-bottom: 1px solid #d0d0d0;
-  border-right: 1px solid #9a9a9a;
+/* sel hari */
+.dc {
+  position: relative;
+  border-right: 1px solid var(--color-line);
+  border-bottom: 1px solid var(--color-line);
+  background: var(--color-surface);
   cursor: pointer;
+}
+.dc.we {
+  background: var(--color-weekend);
+}
+.dc.today {
+  background: var(--color-today-tint);
+}
+.dc.first {
+  border-left: 1px solid var(--color-line-strong);
+}
+.dc:not(.mark):hover::after {
+  content: "+";
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--color-primary);
+  font-size: 15px;
+  font-weight: 700;
+}
+.dc.mark::after {
+  content: "";
+  position: absolute;
+  inset: 3px;
+  border-radius: 5px;
+  background: var(--mark);
+}
+.dc.mark:hover::after {
+  filter: brightness(0.88);
+}
+
+/* sel kiri */
+.lc {
+  position: sticky;
+  z-index: 2;
+  padding: 0 8px;
+  border-right: 1px solid var(--color-line);
+  border-bottom: 1px solid var(--color-line);
+  background: var(--color-surface);
   overflow: hidden;
-  padding: 0 4px;
   text-overflow: ellipsis;
   white-space: nowrap;
+  font-size: 13.5px;
 }
-tr:hover > .lc { background: #eef6f8; }
-tr.is-empty > .lc { cursor: cell; }
+.lc.edge {
+  box-shadow: 6px 0 8px -6px rgb(20 33 43 / 0.2);
+}
+.lc.no {
+  padding: 0;
+  color: var(--color-muted);
+  font-size: 12.5px;
+  font-weight: 600;
+  text-align: center;
+}
+tr.is-empty > .lc {
+  cursor: text;
+}
+tbody tr {
+  transition: opacity 0.15s;
+}
+tbody tr:hover > td {
+  background-image: linear-gradient(rgb(11 110 117 / 0.05), rgb(11 110 117 / 0.05));
+}
+.ph {
+  color: var(--color-faint);
+}
+.ph-h {
+  color: var(--color-faint);
+  opacity: 0;
+}
+tr:hover .ph-h,
+.lc:focus-within .ph-h {
+  opacity: 1;
+}
 
-@keyframes drawer-in { from { transform: translateX(24px); opacity: 0; } to { transform: none; opacity: 1; } }
-.drawer-in { animation: drawer-in .16s ease-out; }
-@media (prefers-reduced-motion: reduce) { .drawer-in { animation: none; } }
+.cellin {
+  display: block;
+  width: 100%;
+  height: 100%;
+  padding: 0 8px;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  text-overflow: ellipsis;
+  outline: none;
+}
+.cellin:focus {
+  background: var(--color-surface);
+  box-shadow: inset 0 0 0 2px var(--color-primary);
+}
 
-.no-del { display: none; color: #dc2626; font-size: 15px; line-height: 1; }
-tr:hover > td > .no-del { display: inline; }
-tr:hover > td > .no-n { display: none; }
+/* nomor baris + aksi saat hover/fokus */
+.no-wrap {
+  display: grid;
+  place-items: center;
+  height: 100%;
+}
+.no-wrap > * {
+  grid-area: 1 / 1;
+}
+.no-wrap .rowact {
+  display: inline-flex;
+  gap: 1px;
+  opacity: 0;
+  pointer-events: none;
+}
+tr:hover .no-wrap .rowact,
+.no-wrap .rowact:focus-within {
+  opacity: 1;
+  pointer-events: auto;
+}
+tr:hover .no-wrap .no-n,
+.no-wrap:focus-within .no-n {
+  opacity: 0;
+}
+.rowact button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  border-radius: 5px;
+  color: var(--color-ink-2);
+  cursor: pointer;
+}
+.rowact button:hover {
+  background: var(--color-surface-3);
+  color: var(--color-ink);
+}
+.rowact button[data-del]:hover {
+  background: var(--color-danger-tint);
+  color: var(--color-danger);
+}
+.del-confirm {
+  padding: 0 6px;
+  border-radius: 5px;
+  background: var(--color-danger);
+  color: #fff;
+  font-size: 11.5px;
+  font-weight: 700;
+  height: 22px;
+  cursor: pointer;
+}
+
+/* ───────────── Gerak ───────────── */
+@keyframes pop-in {
+  from { opacity: 0; transform: translateY(6px) scale(0.985); }
+  to { opacity: 1; transform: none; }
+}
+@keyframes slide-in {
+  from { opacity: 0; transform: translateX(18px); }
+  to { opacity: 1; transform: none; }
+}
+@keyframes fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+.pop-in { animation: pop-in 0.14s ease-out; }
+.drawer-in { animation: slide-in 0.18s ease-out; }
+.fade-in { animation: fade-in 0.12s ease-out; }
+.spin { animation: spin 0.8s linear infinite; }
+@media (prefers-reduced-motion: reduce) {
+  .pop-in, .drawer-in, .fade-in, .spin { animation: none; }
+  tbody tr, .btn, .field { transition: none; }
+}

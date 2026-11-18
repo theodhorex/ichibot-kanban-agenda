@@ -3,10 +3,8 @@ import Agenda from "./ui/agenda";
 
 export default function Home() {
   return (
-    <div className="flex h-screen bg-[#eef1f3] p-3">
-      <main className="min-w-0 flex-1 overflow-hidden rounded-2xl bg-white shadow-[0_1px_8px_rgba(0,0,0,.12)]">
-        <Agenda />
-      </main>
-    </div>
+    <main className="h-dvh min-w-0">
+      <Agenda />
+    </main>
   );
 }

@@ -1,29 +1,22 @@
 import type { Metadata } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
+import { Schibsted_Grotesk } from "next/font/google";
 import "./globals.css";
 
-const geistSans = Geist({
-  variable: "--font-geist-sans",
+const ui = Schibsted_Grotesk({
+  variable: "--font-ui",
   subsets: ["latin"],
-});
-
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
-  subsets: ["latin"],
+  display: "swap",
 });
 
 export const metadata: Metadata = {
-  title: "Annual Agenda",
-  description: "Annual agenda dengan timeline harian",
+  title: "Annual Agenda · Ichibot",
+  description: "Perencanaan agenda tahunan dengan kalender harian, lampiran, dan penyimpanan database.",
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
-    <html
-      lang="en"
-      className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
-    >
-      <body className="min-h-full flex flex-col">{children}</body>
+    <html lang="id" className={`${ui.variable} h-full antialiased`}>
+      <body className="flex min-h-full flex-col">{children}</body>
     </html>
   );
 }

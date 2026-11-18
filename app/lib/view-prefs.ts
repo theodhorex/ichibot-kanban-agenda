@@ -3,22 +3,25 @@ export type Density = "rapat" | "nyaman";
 export type Zoom = "kecil" | "sedang" | "besar";
 export type Prefs = { preset: Preset; density: Density; zoom: Zoom };
 
-export const DEFAULT_PREFS: Prefs = { preset: "lengkap", density: "rapat", zoom: "sedang" };
+export const DEFAULT_PREFS: Prefs = { preset: "lengkap", density: "nyaman", zoom: "sedang" };
 export const PREFS_KEY = "ichibot-layout-v1";
 
-export const ROW_H: Record<Density, number> = { rapat: 21, nyaman: 30 };
-export const DAY_W: Record<Zoom, number> = { kecil: 16, sedang: 23, besar: 34 };
+export const ROW_H: Record<Density, number> = { rapat: 28, nyaman: 38 };
+export const DAY_W: Record<Zoom, number> = { kecil: 20, sedang: 28, besar: 38 };
 
 export type ColKey = "no" | "kegiatan" | "topic" | "date" | "jam" | "link";
-export const COL_W: Record<ColKey, number> = { no: 52, kegiatan: 290, topic: 132, date: 134, jam: 133, link: 150 };
+export const COL_W: Record<ColKey, number> = { no: 56, kegiatan: 300, topic: 140, date: 124, jam: 150, link: 132 };
 export const COL_LABEL: Record<ColKey, string> = {
-  no: "A",
-  kegiatan: "KEGIATAN",
-  topic: "Topics",
-  date: "DATE",
-  jam: "JAM",
-  link: "LAMPIRAN",
+  no: "No",
+  kegiatan: "Kegiatan",
+  topic: "Topik",
+  date: "Tanggal",
+  jam: "Jam",
+  link: "Lampiran",
 };
+
+/** Tinggi tiga baris header kalender (bulan 28 + hari 18 + tanggal 26). */
+export const HEAD_H = 72;
 
 export const PRESET_COLS: Record<Preset, ColKey[]> = {
   lengkap: ["no", "kegiatan", "topic", "date", "jam", "link"],
