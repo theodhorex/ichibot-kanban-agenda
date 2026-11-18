@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { MONTHS_TITLE, dmyToIso, isoToDmy, pad2 } from "../lib/agenda-data";
+import { IconChevronLeft, IconChevronRight, IconChevronsLeft, IconChevronsRight } from "./icons";
 
 const DOW = ["Sen", "Sel", "Rab", "Kam", "Jum", "Sab", "Min"];
 
@@ -41,27 +42,34 @@ export default function DatePicker({
     };
   });
 
-  const nav = "flex h-7 w-7 items-center justify-center rounded-md text-[16px] hover:bg-black/5";
-
   return (
-    <div className="w-[252px]">
-      <div className="mb-2 flex items-center justify-between">
-        <button type="button" className={nav} onClick={() => shift(-12)} aria-label="Tahun sebelumnya">«</button>
-        <button type="button" className={nav} onClick={() => shift(-1)} aria-label="Bulan sebelumnya">‹</button>
-        <span className="flex-1 text-center text-[14px] font-bold">
+    <div className="w-[276px]">
+      <div className="mb-2 flex items-center gap-0.5">
+        <button type="button" className="btn btn-ghost btn-icon btn-sm" onClick={() => shift(-12)} aria-label="Tahun sebelumnya">
+          <IconChevronsLeft />
+        </button>
+        <button type="button" className="btn btn-ghost btn-icon btn-sm" onClick={() => shift(-1)} aria-label="Bulan sebelumnya">
+          <IconChevronLeft />
+        </button>
+        <span className="flex-1 text-center text-[14px] font-bold" aria-live="polite">
           {MONTHS_TITLE[view.m]} {view.y}
         </span>
-        <button type="button" className={nav} onClick={() => shift(1)} aria-label="Bulan berikutnya">›</button>
-        <button type="button" className={nav} onClick={() => shift(12)} aria-label="Tahun berikutnya">»</button>
+        <button type="button" className="btn btn-ghost btn-icon btn-sm" onClick={() => shift(1)} aria-label="Bulan berikutnya">
+          <IconChevronRight />
+        </button>
+        <button type="button" className="btn btn-ghost btn-icon btn-sm" onClick={() => shift(12)} aria-label="Tahun berikutnya">
+          <IconChevronsRight />
+        </button>
       </div>
       <div className="grid grid-cols-7 text-center">
         {DOW.map((d, i) => (
-          <span key={d} className={`py-1 text-[11px] font-semibold ${i >= 5 ? "text-red-500" : "text-black/50"}`}>
+          <span key={d} className={`py-1 text-[11.5px] font-semibold ${i >= 5 ? "text-weekend-ink" : "text-muted"}`}>
             {d}
           </span>
         ))}
         {cells.map((c) => {
           const isSel = c.iso === selected;
+          const isToday = c.iso === todayIso;
           return (
             <button
               key={c.iso}
@@ -69,11 +77,11 @@ export default function DatePicker({
               onClick={() => onPick(isoToDmy(c.iso))}
               aria-label={isoToDmy(c.iso)}
               aria-pressed={isSel}
-              className={`m-px h-8 rounded-md text-[13px] ${
+              className={`m-px h-9 rounded-sm text-[13.5px] tabular-nums ${
                 isSel
-                  ? "bg-[#44808f] font-bold text-white"
-                  : `hover:bg-[#d9ead3] ${c.other ? "text-black/30" : c.weekend ? "text-red-500" : ""} ${
-                      c.iso === todayIso ? "ring-1 ring-[#44808f]" : ""
+                  ? "bg-primary font-bold text-white"
+                  : `hover:bg-primary-tint ${c.other ? "text-faint" : c.weekend ? "text-weekend-ink" : "text-ink"} ${
+                      isToday ? "font-bold shadow-[inset_0_0_0_2px_var(--color-today)]" : ""
                     }`
               }`}
             >
@@ -82,19 +90,11 @@ export default function DatePicker({
           );
         })}
       </div>
-      <div className="mt-2 flex justify-between border-t border-black/10 pt-2">
-        <button
-          type="button"
-          className="rounded-md px-2 py-1 text-[12px] text-red-600 hover:bg-red-50"
-          onClick={onClear}
-        >
-          Hapus
+      <div className="mt-2 flex justify-between border-t border-line pt-2">
+        <button type="button" className="btn btn-ghost btn-danger btn-sm" onClick={onClear}>
+          Hapus tanggal
         </button>
-        <button
-          type="button"
-          className="rounded-md px-2 py-1 text-[12px] font-medium text-[#44808f] hover:bg-black/5"
-          onClick={() => onPick(isoToDmy(todayIso))}
-        >
+        <button type="button" className="btn btn-ghost btn-sm text-primary" onClick={() => onPick(isoToDmy(todayIso))}>
           Hari ini
         </button>
       </div>

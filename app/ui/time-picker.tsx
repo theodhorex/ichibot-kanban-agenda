@@ -30,7 +30,7 @@ function Column({
   onSelect: (n: number) => void;
 }) {
   return (
-    <div className="h-[168px] w-12 overflow-y-auto rounded-md border border-black/10 p-0.5" role="listbox" aria-label={label}>
+    <div className="h-[176px] w-[52px] overflow-y-auto rounded-sm border border-line bg-surface-2 p-0.5" role="listbox" aria-label={label}>
       {items.map((n) => (
         <button
           key={n}
@@ -41,8 +41,8 @@ function Column({
             if (el && n === selected) el.scrollIntoView({ block: "nearest" });
           }}
           onClick={() => onSelect(n)}
-          className={`block h-7 w-full rounded text-center text-[13px] ${
-            n === selected ? "bg-[#44808f] font-bold text-white" : "hover:bg-[#d9ead3]"
+          className={`block h-8 w-full rounded-sm text-center text-[13.5px] tabular-nums ${
+            n === selected ? "bg-primary font-bold text-white" : "hover:bg-primary-tint"
           }`}
         >
           {pad2(n)}
@@ -80,19 +80,20 @@ export default function TimePicker({
   };
 
   return (
-    <div className="w-[252px]">
+    <div className="w-[268px]">
       <div className="flex justify-around">
         <div>
-          <p className="mb-1 text-center text-[12px] font-semibold text-black/60">Mulai</p>
+          <p className="mb-1.5 text-center text-[12.5px] font-semibold text-ink-2">Mulai</p>
           <div className="flex gap-1">
             <Column items={HOURS} selected={start.h} label="Jam mulai" onSelect={(h) => setStartKeepingEnd({ ...start, h })} />
             <Column items={minutes(start.m)} selected={start.m} label="Menit mulai" onSelect={(m) => setStartKeepingEnd({ ...start, m })} />
           </div>
         </div>
         <div>
-          <label className="mb-1 flex items-center justify-center gap-1 text-[12px] font-semibold text-black/60">
+          <label className="mb-1.5 flex cursor-pointer items-center justify-center gap-1.5 text-[12.5px] font-semibold text-ink-2">
             <input
               type="checkbox"
+              className="h-3.5 w-3.5 accent-primary"
               checked={end !== null}
               onChange={(e) => {
                 if (!e.target.checked) return setEnd(null);
@@ -108,18 +109,18 @@ export default function TimePicker({
           </div>
         </div>
       </div>
-      <p className={`mt-2 text-center text-[13px] font-semibold ${invalid ? "text-red-600" : ""}`}>
+      <p className={`mt-2.5 text-center text-[13.5px] font-bold tabular-nums ${invalid ? "text-danger" : ""}`} role={invalid ? "alert" : undefined}>
         {invalid ? "Jam selesai harus setelah jam mulai" : preview}
       </p>
-      <div className="mt-2 flex items-center justify-between border-t border-black/10 pt-2">
-        <button type="button" className="rounded-md px-2 py-1 text-[12px] text-red-600 hover:bg-red-50" onClick={onClear}>
-          Hapus
+      <div className="mt-2 flex items-center justify-between border-t border-line pt-2">
+        <button type="button" className="btn btn-ghost btn-danger btn-sm" onClick={onClear}>
+          Hapus jam
         </button>
         <button
           type="button"
           disabled={invalid}
           onClick={() => onApply(preview)}
-          className="rounded-md bg-[#44808f] px-3 py-1 text-[12px] font-semibold text-white hover:opacity-90 disabled:opacity-40"
+          className="btn btn-primary btn-sm"
         >
           Terapkan
         </button>
