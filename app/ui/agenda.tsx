@@ -286,7 +286,6 @@ export default function Agenda() {
     return c;
   }, [rows, year]);
   const yearCount = monthCounts.reduce((a, b) => a + b, 0);
-  const nowMonth = todayIso.startsWith(`${year}-`) ? Number(todayIso.slice(5, 7)) - 1 : -1;
 
   /* ---------- scroll + jendela horizontal ---------- */
   const measure = useCallback(() => {
