@@ -136,19 +136,8 @@ function NavItem({
   );
 }
 
-export default function Sidebar({
-  collapsed: collapsedProp,
-  onCollapsedChange,
-}: {
-  collapsed?: boolean;
-  onCollapsedChange?: (collapsed: boolean) => void;
-} = {}) {
-  const [inner, setInner] = useState(false);
-  const collapsed = collapsedProp ?? inner;
-  const setCollapsed = (v: boolean) => {
-    setInner(v);
-    onCollapsedChange?.(v);
-  };
+export default function Sidebar() {
+  const [collapsed, setCollapsed] = useState(false);
   const [active, setActive] = useState<ItemKey>("dashboard");
 
   return (

@@ -1,5 +1,10 @@
-import AppShell from "./ui/app-shell";
+import Agenda from "./ui/agenda";
+// Sidebar disembunyikan sementara (briefing 19 Nov 2026). Komponennya tetap ada di ./ui/sidebar.tsx.
 
 export default function Home() {
-  return <AppShell />;
+  return (
+    <main className="h-dvh min-w-0">
+      <Agenda />
+    </main>
+  );
 }

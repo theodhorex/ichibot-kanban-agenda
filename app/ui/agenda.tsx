@@ -69,8 +69,7 @@ const focusRow = (id: string) => {
 
 const isoOf = (d: Date) => `${d.getFullYear()}-${pad2(d.getMonth() + 1)}-${pad2(d.getDate())}`;
 
-/** `fullCalendar` memaksa layout kalender penuh tanpa mengubah preferensi tersimpan (dipakai saat sidebar ditutup). */
-export default function Agenda({ fullCalendar = false }: { fullCalendar?: boolean } = {}) {
+export default function Agenda() {
   const [year, setYear] = useState(2026);
   const [rows, setRows] = useState<AgendaRow[]>([]);
   const [colors, setColors] = useState<Record<string, string>>({});
@@ -231,7 +230,7 @@ export default function Agenda({ fullCalendar = false }: { fullCalendar?: boolea
     } catch {}
   }, [prefs, prefsReady]);
 
-  const cols = fullCalendar ? PRESET_COLS.kalender : PRESET_COLS[prefs.preset];
+  const cols = PRESET_COLS[prefs.preset];
   const isList = cols.length > 0; // layout yang menampilkan daftar agenda: tulis langsung di baris
   const { lefts, total } = useMemo(() => leftOffsets(cols), [cols]);
   const dayW = DAY_W[prefs.zoom];
