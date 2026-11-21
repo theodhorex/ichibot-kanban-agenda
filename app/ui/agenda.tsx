@@ -42,7 +42,6 @@ import {
   IconDownload,
   IconFile,
   IconList,
-  IconPanelLeft,
   IconPlus,
   IconSearch,
   IconSheet,
@@ -511,10 +510,17 @@ export default function Agenda() {
     <div className="flex h-full flex-col bg-surface text-ink">
       <header className="border-b border-line bg-surface">
         <div className="flex flex-wrap items-center gap-x-3 gap-y-2 px-4 pb-2 pt-3">
-          <div className="flex items-center gap-2.5 pr-1">
+          <button
+            type="button"
+            className="flex items-center gap-2.5 rounded-md pr-1 hover:opacity-80"
+            onClick={() => setPrefs((p) => ({ ...p, preset: p.preset === "lengkap" ? "kalender" : "lengkap" }))}
+            aria-pressed={isList}
+            aria-label={isList ? "Tutup daftar agenda (kalender penuh)" : "Buka daftar agenda"}
+            title={isList ? "Tutup daftar agenda: kalender penuh" : "Buka daftar agenda"}
+          >
             <LogoMark />
             <h1 className="text-[17px] font-bold leading-none tracking-tight">Annual Agenda</h1>
-          </div>
+          </button>
 
           <div className="flex items-center gap-0.5" role="group" aria-label="Pilih tahun">
             <button className="btn btn-ghost btn-icon" onClick={() => setYear(year - 1)} aria-label="Tahun sebelumnya">
@@ -527,15 +533,6 @@ export default function Agenda() {
               <IconChevronRight />
             </button>
           </div>
-          <button
-            className="btn btn-ghost btn-icon"
-            onClick={() => setPrefs((p) => ({ ...p, preset: p.preset === "lengkap" ? "kalender" : "lengkap" }))}
-            aria-pressed={isList}
-            aria-label={isList ? "Tutup daftar agenda (kalender penuh)" : "Buka daftar agenda"}
-            title={isList ? "Tutup daftar agenda: kalender penuh" : "Buka daftar agenda"}
-          >
-            <IconPanelLeft />
-          </button>
           <button className="btn" onClick={() => goTo(todayIso || isoOf(new Date()))}>
             Hari ini
           </button>
