@@ -91,6 +91,9 @@ export const TableHead = memo(function TableHead({
 /* ---------- Sel yang bisa diketik langsung ----------
    Ketikan hidup di state lokal sel ini saja; data baru dikirim saat blur/Enter,
    jadi tabel tidak dirender ulang per ketukan. Esc membatalkan. */
+/** Satu tanda di kalender. Satu baris bisa memuat beberapa tanda (satu per bulan). */
+export type Mark = { iso: string; id: string; color: string; title: string; dim: boolean };
+
 export type FieldHandler = (id: string | null, field: "kegiatan" | "topic", value: string) => void;
 
 function CellInput({
@@ -217,7 +220,7 @@ export const AgendaRowView = memo(function AgendaRowView({
   idx,
   hint,
   calOnly,
-  markIso,
+  marks,
   color,
   dim,
   confirming,
@@ -233,8 +236,8 @@ export const AgendaRowView = memo(function AgendaRowView({
   row: AgendaRow | null;
   idx: number;
   hint: boolean;
-  calOnly: boolean; // agenda bulan lain: hanya tanda di kalender, kolom daftar kosong
-  markIso: string | null;
+  calOnly: boolean; // baris tanpa agenda di daftar: hanya tanda kalender, kolom daftar kosong
+  marks: Mark[];
   color: string;
   dim: boolean;
   confirming: boolean;
@@ -251,20 +254,20 @@ export const AgendaRowView = memo(function AgendaRowView({
   const cells = [];
   for (let i = from; i < hi; i++) {
     const d = days[i];
-    const marked = markIso === d.iso;
+    const mk = marks.find((m) => m.iso === d.iso);
     cells.push(
       <td
         key={d.iso}
         data-iso={d.iso}
-        data-m={marked ? row?.id : undefined}
-        title={marked && row ? `${row.kegiatan}${row.jam ? `, ${row.jam}` : ""}` : undefined}
-        className={`dc ${d.weekend ? "we" : ""} ${d.iso === todayIso ? "today" : ""} ${d.first ? "first" : ""} ${marked ? "mark" : ""}`}
-        style={marked ? ({ "--mark": color } as CSSProperties) : undefined}
+        data-m={mk?.id}
+        title={mk?.title}
+        className={`dc ${d.weekend ? "we" : ""} ${d.iso === todayIso ? "today" : ""} ${d.first ? "first" : ""} ${mk ? "mark" : ""}`}
+        style={mk ? ({ "--mark": mk.color, opacity: mk.dim ? 0.28 : 1 } as CSSProperties) : undefined}
       />,
     );
   }
   return (
-    <tr className={row ? "" : "is-empty"} style={{ height: rowH, opacity: dim ? 0.28 : 1 }}>
+    <tr className={row || marks.length ? "" : "is-empty"} style={{ height: rowH }}>
       {cols.map((c, i) => {
         const input = c === "kegiatan" || c === "topic";
         return (
@@ -278,6 +281,7 @@ export const AgendaRowView = memo(function AgendaRowView({
               ...stickyLeft(lefts[i], COL_W[c]),
               ...(input ? { padding: 0 } : null),
               textAlign: c === "no" ? "center" : "left",
+              opacity: dim ? 0.28 : 1,
             }}
           >
             {calOnly ? null : leftCell(c, row, idx, color, confirming, hint, onField)}

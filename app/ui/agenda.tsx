@@ -29,7 +29,7 @@ import {
 import { DetailDialog } from "./agenda-detail";
 import AgendaDrawer from "./agenda-drawer";
 import AgendaListPanel from "./agenda-list-panel";
-import { AgendaRowView, TableHead, type FieldHandler } from "./agenda-table";
+import { AgendaRowView, TableHead, type FieldHandler, type Mark } from "./agenda-table";
 import AttachmentsDialog from "./attachments-dialog";
 import DatePicker from "./date-picker";
 import DayDialog from "./day-dialog";
@@ -267,19 +267,42 @@ export default function Agenda() {
     });
     const byId = new Map(rows.map((r) => [r.id, r]));
     const added = freshIds.map((id) => byId.get(id)).filter((r): r is AgendaRow => !!r);
-    // Agenda bulan lain di tahun ini: hanya tanda di kalender, kolom daftarnya dikosongkan.
-    const cal = old.filter((r) => {
+    const list = [...base, ...added];
+    // Agenda bulan lain di tahun ini: tampil hanya di kalender, bertumpuk dari baris paling atas per bulan.
+    const others: AgendaRow[][] = Array.from({ length: 12 }, () => []);
+    for (const r of old) {
       const iso = dmyToIso(r.date);
-      return !!iso && iso.startsWith(`${year}-`) && !iso.startsWith(prefix);
-    });
-    return { list: [...base, ...added], cal };
+      if (iso && iso.startsWith(`${year}-`) && !iso.startsWith(prefix)) others[Number(iso.slice(5, 7)) - 1].push(r);
+    }
+    const count = Math.max(list.length, ...others.map((o) => o.length));
+    return { list, others, count };
   }, [rows, freshIds, year, viewMonth]);
-  const listLen = shown.list.length + shown.cal.length;
-  const calIds = useMemo(() => new Set(shown.cal.map((r) => r.id)), [shown]);
-  const display = useMemo<(AgendaRow | null)[]>(() => {
+
+  const isDim = (r: AgendaRow) => !matches(r) || (topicFilter !== null && r.topic.trim() !== topicFilter);
+  const markOf = (r: AgendaRow): Mark | null => {
+    const iso = dmyToIso(r.date);
+    if (!iso) return null;
+    return {
+      iso,
+      id: r.id,
+      color: colorOf(r.topic.trim()),
+      title: `${r.kegiatan}${r.jam ? `, ${r.jam}` : ""}`,
+      dim: isDim(r),
+    };
+  };
+  // Tiap baris: agenda di daftar (bulan terpilih) + tanda dari agenda bulan lain pada urutan yang sama.
+  const gridRows = Array.from({ length: shown.count }, (_, i) => {
+    const row = shown.list[i] ?? null;
+    const marks = [row ? markOf(row) : null, ...shown.others.map((o) => (o[i] ? markOf(o[i]) : null))].filter(
+      (m): m is Mark => !!m,
+    );
+    return { row, marks };
+  });
+  const listLen = shown.count;
+  const display = useMemo<null[]>(() => {
     const target = Math.ceil(viewH / rowH) + 1;
-    return [...shown.list, ...shown.cal, ...Array.from({ length: Math.max(4, target - listLen) }, () => null)];
-  }, [shown, listLen, viewH, rowH]);
+    return Array.from({ length: Math.max(4, target - listLen) }, () => null);
+  }, [listLen, viewH, rowH]);
 
   const topicCounts = useMemo(() => {
     const m = new Map<string, number>();
@@ -676,17 +699,38 @@ export default function Agenda() {
           <table onClick={onTableClick} className="cal" style={{ width: total + days.length * dayW }}>
             <TableHead months={months} cols={cols} lefts={lefts} leftTotal={total} dayW={dayW} todayIso={todayIso} />
             <tbody>
-              {display.map((r, i) => (
+              {gridRows.map(({ row: r, marks }, i) => (
                 <AgendaRowView
-                  key={r?.id ?? `e${i}`}
+                  key={r?.id ?? `c${i}`}
                   row={r}
                   idx={i}
-                  hint={!r && i === listLen}
-                  calOnly={r ? calIds.has(r.id) : false}
-                  markIso={r ? dmyToIso(r.date) : null}
+                  hint={false}
+                  calOnly={!r}
+                  marks={marks}
                   color={r ? colorOf(r.topic.trim()) : DEFAULT_TOPIC_COLOR}
-                  dim={r ? !matches(r) || (topicFilter !== null && r.topic.trim() !== topicFilter) : false}
+                  dim={r ? isDim(r) : false}
                   confirming={r ? confirmId === r.id : false}
+                  onField={onField}
+                  cols={cols}
+                  lefts={lefts}
+                  days={days}
+                  from={range.from}
+                  to={range.to}
+                  rowH={rowH}
+                  todayIso={todayIso}
+                />
+              ))}
+              {display.map((r, i) => (
+                <AgendaRowView
+                  key={`e${i}`}
+                  row={r}
+                  idx={listLen + i}
+                  hint={i === 0}
+                  calOnly={false}
+                  marks={[]}
+                  color={DEFAULT_TOPIC_COLOR}
+                  dim={false}
+                  confirming={false}
                   onField={onField}
                   cols={cols}
                   lefts={lefts}
