@@ -460,7 +460,8 @@ export default function Agenda() {
     const onDel = !!target.closest("[data-del]");
     if (!onDel) setConfirmId(null);
     if (d.iso) {
-      if (d.head || d.m) setDayIso(d.iso);
+      if (d.m) setDetailId(d.m); // klik blok agenda: langsung buka detailnya
+      else if (d.head) setDayIso(d.iso);
       else openAdd(isoToDmy(d.iso));
     } else if (d.col) {
       const id = d.r;
