@@ -259,15 +259,27 @@ export default function Agenda() {
   const shown = useMemo(() => {
     const fresh = new Set(freshIds);
     const prefix = `${year}-${pad2(viewMonth + 1)}-`;
-    const base = sortRows(rows.filter((r) => !fresh.has(r.id))).filter((r) => (dmyToIso(r.date) ?? "").startsWith(prefix));
+    const old = sortRows(rows.filter((r) => !fresh.has(r.id)));
+    // Tanpa tanggal tetap tampil di daftar supaya tidak hilang.
+    const base = old.filter((r) => {
+      const iso = dmyToIso(r.date);
+      return !iso || iso.startsWith(prefix);
+    });
     const byId = new Map(rows.map((r) => [r.id, r]));
     const added = freshIds.map((id) => byId.get(id)).filter((r): r is AgendaRow => !!r);
-    return [...base, ...added];
+    // Agenda bulan lain di tahun ini: hanya tanda di kalender, kolom daftarnya dikosongkan.
+    const cal = old.filter((r) => {
+      const iso = dmyToIso(r.date);
+      return !!iso && iso.startsWith(`${year}-`) && !iso.startsWith(prefix);
+    });
+    return { list: [...base, ...added], cal };
   }, [rows, freshIds, year, viewMonth]);
+  const listLen = shown.list.length + shown.cal.length;
+  const calIds = useMemo(() => new Set(shown.cal.map((r) => r.id)), [shown]);
   const display = useMemo<(AgendaRow | null)[]>(() => {
     const target = Math.ceil(viewH / rowH) + 1;
-    return [...shown, ...Array.from({ length: Math.max(4, target - shown.length) }, () => null)];
-  }, [shown, viewH, rowH]);
+    return [...shown.list, ...shown.cal, ...Array.from({ length: Math.max(4, target - listLen) }, () => null)];
+  }, [shown, listLen, viewH, rowH]);
 
   const topicCounts = useMemo(() => {
     const m = new Map<string, number>();
@@ -669,7 +681,8 @@ export default function Agenda() {
                   key={r?.id ?? `e${i}`}
                   row={r}
                   idx={i}
-                  hint={!r && i === shown.length}
+                  hint={!r && i === listLen}
+                  calOnly={r ? calIds.has(r.id) : false}
                   markIso={r ? dmyToIso(r.date) : null}
                   color={r ? colorOf(r.topic.trim()) : DEFAULT_TOPIC_COLOR}
                   dim={r ? !matches(r) || (topicFilter !== null && r.topic.trim() !== topicFilter) : false}

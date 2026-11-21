@@ -216,6 +216,7 @@ export const AgendaRowView = memo(function AgendaRowView({
   row,
   idx,
   hint,
+  calOnly,
   markIso,
   color,
   dim,
@@ -232,6 +233,7 @@ export const AgendaRowView = memo(function AgendaRowView({
   row: AgendaRow | null;
   idx: number;
   hint: boolean;
+  calOnly: boolean; // agenda bulan lain: hanya tanda di kalender, kolom daftar kosong
   markIso: string | null;
   color: string;
   dim: boolean;
@@ -269,8 +271,8 @@ export const AgendaRowView = memo(function AgendaRowView({
           <td
             key={c}
             data-left="1"
-            data-col={c}
-            data-r={row?.id}
+            data-col={calOnly ? undefined : c}
+            data-r={calOnly ? undefined : row?.id}
             className={`lc ${c === "no" ? "no" : ""} ${i === cols.length - 1 ? "edge" : ""}`}
             style={{
               ...stickyLeft(lefts[i], COL_W[c]),
@@ -278,7 +280,7 @@ export const AgendaRowView = memo(function AgendaRowView({
               textAlign: c === "no" ? "center" : "left",
             }}
           >
-            {leftCell(c, row, idx, color, confirming, hint, onField)}
+            {calOnly ? null : leftCell(c, row, idx, color, confirming, hint, onField)}
           </td>
         );
       })}
