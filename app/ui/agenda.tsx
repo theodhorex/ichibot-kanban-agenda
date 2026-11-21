@@ -559,6 +559,7 @@ export default function Agenda() {
           </div>
         </div>
 
+        {isList && (
         <div className="flex items-center gap-1 overflow-x-auto px-3 pb-2 pt-0.5 [scrollbar-width:none]">
           <nav className="flex flex-none items-center gap-0.5" aria-label={`Bulan di ${year}`}>
             {MONTHS_TITLE.map((name, i) => (
@@ -606,6 +607,7 @@ export default function Agenda() {
             </>
           )}
         </div>
+        )}
       </header>
 
       {saveBad && (
