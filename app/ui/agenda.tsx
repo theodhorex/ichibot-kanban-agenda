@@ -360,15 +360,25 @@ export default function Agenda() {
       if (!el) return;
       setViewMonth(Number(iso.slice(5, 7)) - 1);
       if (isList) {
-        // Bulan lain dirender pada frame berikutnya; kalender bulan ini selalu mulai dari tanggal 1.
-        requestAnimationFrame(() => el.scrollTo({ left: 0, top: 0 }));
+        const dayIdx = Number(iso.slice(8, 10)) - 1;
+        // Bulan lain dirender pada frame berikutnya; pastikan tanggal tujuan terlihat tanpa memaksa ke kiri jika bukan tanggal 1.
+        requestAnimationFrame(() => {
+          if (dayIdx <= 0) {
+            el.scrollTo({ left: 0, top: 0 });
+          } else {
+            const x = dayIdx * dayW;
+            const visibleW = el.clientWidth - total;
+            const left = x < el.scrollLeft || x + dayW > el.scrollLeft + visibleW ? Math.max(0, x - visibleW / 2) : el.scrollLeft;
+            el.scrollTo({ left, top: el.scrollTop, behavior: smooth ? "smooth" : "auto" });
+          }
+        });
         return;
       }
       const i = fullIndex.get(iso);
       if (i === undefined) return;
       el.scrollTo({ left: i * dayW, top: 0, behavior: smooth ? "smooth" : "auto" });
     },
-    [fullIndex, dayW, isList],
+    [fullIndex, dayW, isList, total],
   );
 
   const latest = useRef({ scrollToIso, measure, year, viewMonth });
@@ -395,7 +405,7 @@ export default function Agenda() {
     setFlashIso(iso);
     flashTimer.current = setTimeout(() => {
       setFlashIso((cur) => (cur === iso ? null : cur));
-    }, 2200);
+    }, 2500);
   }, []);
 
   useEffect(() => () => {
