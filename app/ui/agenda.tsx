@@ -239,8 +239,11 @@ export default function Agenda() {
   const rowH = ROW_H[prefs.density];
 
   const months = useMemo(() => buildYear(year), [year]);
-  const days = useMemo(() => months.flatMap((m) => m.days), [months]);
-  const dayIndex = useMemo(() => new Map(days.map((d, i) => [d.iso, i])), [days]);
+  const allDays = useMemo(() => months.flatMap((m) => m.days), [months]);
+  const fullIndex = useMemo(() => new Map(allDays.map((d, i) => [d.iso, i])), [allDays]);
+  // Layout daftar: kalender hanya memuat bulan terpilih (tidak bisa digulir ke bulan lain). Kalender penuh: satu tahun.
+  const viewMonths = useMemo(() => (isList ? [months[viewMonth]] : months), [isList, months, viewMonth]);
+  const days = useMemo(() => viewMonths.flatMap((m) => m.days), [viewMonths]);
 
   const sorted = useMemo(() => sortRows(rows), [rows]);
   const topics = useMemo(() => Array.from(new Set(rows.map((r) => r.topic.trim()).filter(Boolean))), [rows]);
@@ -273,9 +276,9 @@ export default function Agenda() {
       const iso = dmyToIso(r.date);
       if (iso && iso.startsWith(`${year}-`) && !iso.startsWith(prefix)) others[Number(iso.slice(5, 7)) - 1].push(r);
     }
-    const count = Math.max(list.length, ...others.map((o) => o.length));
-    return { list, others, count };
-  }, [rows, freshIds, year, viewMonth]);
+    const count = isList ? list.length : Math.max(list.length, ...others.map((o) => o.length));
+    return { list, others: isList ? [] : others, count };
+  }, [rows, freshIds, year, viewMonth, isList]);
 
   const isDim = (r: AgendaRow) => !matches(r) || (topicFilter !== null && r.topic.trim() !== topicFilter);
   const markOf = (r: AgendaRow): Mark | null => {
@@ -351,23 +354,39 @@ export default function Agenda() {
 
   const scrollToIso = useCallback(
     (iso: string, smooth = true) => {
-      const i = dayIndex.get(iso);
       const el = scroller.current;
-      if (i === undefined || !el) return;
+      if (!el) return;
       setViewMonth(Number(iso.slice(5, 7)) - 1);
+      if (isList) {
+        // Bulan lain dirender pada frame berikutnya; kalender bulan ini selalu mulai dari tanggal 1.
+        requestAnimationFrame(() => el.scrollTo({ left: 0, top: 0 }));
+        return;
+      }
+      const i = fullIndex.get(iso);
+      if (i === undefined) return;
       el.scrollTo({ left: i * dayW, top: 0, behavior: smooth ? "smooth" : "auto" });
     },
-    [dayIndex, dayW],
+    [fullIndex, dayW, isList],
   );
 
-  // Saat tahun/zoom berubah: gulir ke tanggal tujuan, atau ke bulan berjalan.
+  const latest = useRef({ scrollToIso, measure, year, viewMonth });
   useEffect(() => {
+    latest.current = { scrollToIso, measure, year, viewMonth };
+  });
+
+  // Saat tahun/zoom/layout berubah: gulir ke tanggal tujuan, atau ke bulan terpilih.
+  useEffect(() => {
+    const { scrollToIso: go, measure: m, viewMonth: vm } = latest.current;
     const target = scrollTarget.current;
     scrollTarget.current = null;
-    const now = new Date();
-    scrollToIso(target ?? (now.getFullYear() === year ? `${year}-${pad2(now.getMonth() + 1)}-01` : `${year}-01-01`), false);
+    go(target ?? `${year}-${pad2(vm + 1)}-01`, false);
+    queueMicrotask(m);
+  }, [year, isList, dayW]);
+
+  // Rentang kolom yang dirender dihitung ulang saat kolom hari berubah (ganti bulan).
+  useEffect(() => {
     queueMicrotask(measure);
-  }, [year, scrollToIso, measure]);
+  }, [measure]);
 
   const goTo = (iso: string) => {
     const y = Number(iso.slice(0, 4));
@@ -671,7 +690,7 @@ export default function Agenda() {
           aria-busy={dbState !== "ready"}
         >
           <table onClick={onTableClick} className="cal" style={{ width: total + days.length * dayW }}>
-            <TableHead months={months} cols={cols} lefts={lefts} leftTotal={total} dayW={dayW} todayIso={todayIso} />
+            <TableHead months={viewMonths} cols={cols} lefts={lefts} leftTotal={total} dayW={dayW} todayIso={todayIso} />
             <tbody>
               {gridRows.map(({ row: r, marks }, i) => (
                 <AgendaRowView
