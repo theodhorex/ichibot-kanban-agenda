@@ -37,6 +37,20 @@ export const IconTrash = (p: P) => (<svg {...svg(p)}><path d="M4 7h16M9.5 7V4.5h
 export const IconPencil = (p: P) => (<svg {...svg(p)}><path d="M4 20h4L19 9a2.1 2.1 0 0 0-3-3L5 17v3ZM14 7l3 3" /></svg>);
 export const IconExpand = (p: P) => (<svg {...svg(p)}><path d="M14 4h6v6M10 20H4v-6M20 4l-7 7M4 20l7-7" /></svg>);
 export const IconList = (p: P) => (<svg {...svg(p)}><path d="M9 6h11M9 12h11M9 18h11M4.5 6h.01M4.5 12h.01M4.5 18h.01" /></svg>);
+export const IconSidebarClose = (p: P) => (
+  <svg {...svg(p)}>
+    <rect x="3.5" y="4" width="17" height="16" rx="2.5" />
+    <path d="M9.5 4v16" />
+    <path d="m16 9.5-2.5 2.5 2.5 2.5" />
+  </svg>
+);
+export const IconSidebarOpen = (p: P) => (
+  <svg {...svg(p)}>
+    <rect x="3.5" y="4" width="17" height="16" rx="2.5" />
+    <path d="M9.5 4v16" />
+    <path d="m13.5 9.5 2.5 2.5-2.5 2.5" />
+  </svg>
+);
 export const IconSliders = (p: P) => (<svg {...svg(p)}><path d="M4 7h9M17 7h3M4 17h3M11 17h9M13 7a2 2 0 1 0 4 0 2 2 0 0 0-4 0ZM7 17a2 2 0 1 0 4 0 2 2 0 0 0-4 0Z" /></svg>);
 export const IconDownload = (p: P) => (<svg {...svg(p)}><path d="M12 4v11M7.5 11 12 15.5 16.5 11M5 20h14" /></svg>);
 export const IconSheet = (p: P) => (<svg {...svg(p)}><rect x="4" y="4" width="16" height="16" rx="2" /><path d="M4 10h16M4 15h16M10 4v16" /></svg>);

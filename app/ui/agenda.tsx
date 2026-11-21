@@ -44,8 +44,9 @@ import {
   IconList,
   IconPlus,
   IconSheet,
+  IconSidebarClose,
+  IconSidebarOpen,
   IconSpinner,
-  LogoMark,
 } from "./icons";
 import { Dropdown, MenuItem } from "./menu";
 import { Popover, anchorOf, type Anchor } from "./popup";
@@ -566,16 +567,16 @@ export default function Agenda() {
     <div className="flex h-full flex-col bg-surface text-ink">
       <header className="border-b border-line bg-surface">
         <div className="flex flex-wrap items-center gap-x-3 gap-y-2 px-4 pb-2 pt-3">
-          <div className="flex items-center gap-2.5 pr-1">
+          <div className="flex items-center gap-2 pr-1">
             <button
               type="button"
-              className="rounded-md hover:opacity-80"
+              className="btn btn-ghost btn-icon"
               onClick={() => setPrefs((p) => ({ ...p, preset: p.preset === "lengkap" ? "kalender" : "lengkap" }))}
               aria-pressed={isList}
               aria-label={isList ? "Tutup daftar agenda (kalender penuh)" : "Buka daftar agenda"}
               title={isList ? "Tutup daftar agenda: kalender penuh" : "Buka daftar agenda"}
             >
-              <LogoMark />
+              {isList ? <IconSidebarClose size={20} /> : <IconSidebarOpen size={20} />}
             </button>
             <h1 className="text-[17px] font-bold leading-none tracking-tight">Annual Agenda</h1>
           </div>
