@@ -559,8 +559,8 @@ export default function Agenda() {
           </div>
         </div>
 
-        {isList && (
         <div className="flex items-center gap-1 overflow-x-auto px-3 pb-2 pt-0.5 [scrollbar-width:none]">
+          {isList && (
           <nav className="flex flex-none items-center gap-0.5" aria-label={`Bulan di ${year}`}>
             {MONTHS_TITLE.map((name, i) => (
               <button
@@ -576,9 +576,10 @@ export default function Agenda() {
               </button>
             ))}
           </nav>
+          )}
           {topics.length > 0 && (
             <>
-              <span className="mx-2 h-5 w-px flex-none bg-line-strong" aria-hidden />
+              {isList && <span className="mx-2 h-5 w-px flex-none bg-line-strong" aria-hidden />}
               <div className="flex flex-none items-center gap-1.5" role="group" aria-label="Topik">
                 {topics.map((t) => (
                   <div key={t} className="chip" data-on={topicFilter === t}>
@@ -607,7 +608,6 @@ export default function Agenda() {
             </>
           )}
         </div>
-        )}
       </header>
 
       {saveBad && (
