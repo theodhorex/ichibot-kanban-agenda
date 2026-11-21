@@ -543,30 +543,31 @@ export default function Agenda() {
             <h1 className="text-[17px] font-bold leading-none tracking-tight">Annual Agenda</h1>
           </div>
 
-          <div className="flex items-center gap-0.5" role="group" aria-label="Pilih tahun">
-            <button className="btn btn-ghost btn-icon" onClick={() => setYear(year - 1)} aria-label="Tahun sebelumnya">
-              <IconChevronLeft />
-            </button>
-            <span className="min-w-[64px] text-center text-[22px] font-extrabold leading-none tabular-nums" aria-live="polite">
-              {year}
-            </span>
-            <button className="btn btn-ghost btn-icon" onClick={() => setYear(year + 1)} aria-label="Tahun berikutnya">
-              <IconChevronRight />
-            </button>
-          </div>
-          {!isList && (
-            <button className="btn" onClick={() => goTo(todayIso || isoOf(new Date()))}>
-              Hari ini
-            </button>
-          )}
-          {isList && (
-            <Dropdown label={`${MONTHS_TITLE[viewMonth]} ${year}`} icon={<IconCalendar />} width={220}>
-              {(close) => (
-                <>
+          <Dropdown
+            label={isList ? `${MONTHS_TITLE[viewMonth]} ${year}` : String(year)}
+            icon={<IconCalendar />}
+            width={240}
+            align="left"
+            keepLabel
+          >
+            {(close) => (
+              <>
+                <div className="mb-1.5 flex items-center justify-between border-b border-line pb-1.5" role="group" aria-label="Pilih tahun">
+                  <button type="button" className="btn btn-ghost btn-icon" onClick={() => setYear(year - 1)} aria-label="Tahun sebelumnya">
+                    <IconChevronLeft />
+                  </button>
+                  <span className="text-[15px] font-bold tabular-nums" aria-live="polite">
+                    {year}
+                  </span>
+                  <button type="button" className="btn btn-ghost btn-icon" onClick={() => setYear(year + 1)} aria-label="Tahun berikutnya">
+                    <IconChevronRight />
+                  </button>
+                </div>
+                <div className="max-h-[340px] overflow-y-auto">
                   {MONTHS_TITLE.map((name, m) => (
                     <MenuItem
                       key={name}
-                      icon={m === viewMonth ? <IconCheck size={16} className="text-ok" /> : <span className="inline-block w-4" />}
+                      icon={isList && m === viewMonth ? <IconCheck size={16} className="text-ok" /> : <span className="inline-block w-4" />}
                       title={name}
                       hint={monthCounts[m] > 0 ? `${monthCounts[m]} agenda` : "Belum ada agenda"}
                       onClick={() => {
@@ -575,9 +576,14 @@ export default function Agenda() {
                       }}
                     />
                   ))}
-                </>
-              )}
-            </Dropdown>
+                </div>
+              </>
+            )}
+          </Dropdown>
+          {!isList && (
+            <button className="btn" onClick={() => goTo(todayIso || isoOf(new Date()))}>
+              Hari ini
+            </button>
           )}
 
           <div className="relative min-w-[150px] max-w-[320px] flex-1">

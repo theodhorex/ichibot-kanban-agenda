@@ -8,11 +8,15 @@ export function Dropdown({
   label,
   icon,
   width = 240,
+  align = "right",
+  keepLabel = false,
   children,
 }: {
   label: string;
   icon: ReactNode;
   width?: number;
+  align?: "left" | "right";
+  keepLabel?: boolean;
   children: (close: () => void) => ReactNode;
 }) {
   const [open, setOpen] = useState(false);
@@ -49,13 +53,13 @@ export function Dropdown({
         onClick={() => setOpen((v) => !v)}
       >
         {icon}
-        <span className="hidden lg:inline">{label}</span>
-        <span className="lg:hidden sr-only">{label}</span>
+        <span className={keepLabel ? "inline" : "hidden lg:inline"}>{label}</span>
+        {!keepLabel && <span className="lg:hidden sr-only">{label}</span>}
         <IconChevronDown size={14} className="text-muted" />
       </button>
       {open && (
         <div
-          className="pop-in absolute right-0 top-full z-50 mt-1.5 rounded-md border border-line bg-surface p-1.5 shadow-float"
+          className={`pop-in absolute ${align === "left" ? "left-0" : "right-0"} top-full z-50 mt-1.5 rounded-md border border-line bg-surface p-1.5 shadow-float`}
           style={{ width }}
         >
           {children(() => setOpen(false))}
