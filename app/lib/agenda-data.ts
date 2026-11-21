@@ -1,4 +1,4 @@
-export type Attachment = { type: string; url: string };
+export type Attachment = { type: string; url: string; name?: string };
 
 export type AgendaRow = {
   id: string;
@@ -28,10 +28,11 @@ export function normalizeRow(r: Partial<AgendaRow> & { link?: string }): AgendaR
   };
 }
 
-// Hanya izinkan http(s) agar tautan tidak bisa menjalankan skrip.
+// Hanya izinkan http(s) atau path hasil upload lokal `/uploads/...` agar tautan tidak bisa menjalankan skrip.
 export function safeHref(url: string): string | null {
   const u = url.trim();
   if (!u) return null;
+  if (/^\/uploads\/[A-Za-z0-9._-]+$/.test(u)) return u;
   const withScheme = /^[a-z][a-z0-9+.-]*:/i.test(u) ? u : `https://${u}`;
   return /^https?:\/\//i.test(withScheme) ? withScheme : null;
 }

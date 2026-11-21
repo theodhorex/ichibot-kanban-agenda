@@ -53,6 +53,7 @@ export const IconSidebarOpen = (p: P) => (
 );
 export const IconSliders = (p: P) => (<svg {...svg(p)}><path d="M4 7h9M17 7h3M4 17h3M11 17h9M13 7a2 2 0 1 0 4 0 2 2 0 0 0-4 0ZM7 17a2 2 0 1 0 4 0 2 2 0 0 0-4 0Z" /></svg>);
 export const IconDownload = (p: P) => (<svg {...svg(p)}><path d="M12 4v11M7.5 11 12 15.5 16.5 11M5 20h14" /></svg>);
+export const IconUpload = (p: P) => (<svg {...svg(p)}><path d="M12 16V5M7.5 9.5 12 5l4.5 4.5M5 20h14" /></svg>);
 export const IconSheet = (p: P) => (<svg {...svg(p)}><rect x="4" y="4" width="16" height="16" rx="2" /><path d="M4 10h16M4 15h16M10 4v16" /></svg>);
 export const IconFile = (p: P) => (<svg {...svg(p)}><path d="M14 3H7.5A1.5 1.5 0 0 0 6 4.5v15A1.5 1.5 0 0 0 7.5 21h9a1.5 1.5 0 0 0 1.5-1.5V7l-4-4ZM14 3v4h4M9 13h6M9 17h4" /></svg>);
 export const IconAlert = (p: P) => (<svg {...svg(p)}><path d="M12 4 3 19.5h18L12 4ZM12 10v4.5M12 17.2h.01" /></svg>);

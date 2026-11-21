@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { dmyToIso, pad2, safeHref, type AgendaRow } from "../lib/agenda-data";
-import { IconCalendar, IconCheck, IconClock, IconCopy, IconExternal, IconLink, IconPencil } from "./icons";
+import { IconCalendar, IconCheck, IconClock, IconCopy, IconExternal, IconFile, IconLink, IconPencil } from "./icons";
 import { Modal } from "./popup";
 
 const longFmt = new Intl.DateTimeFormat("id-ID", { weekday: "long", day: "numeric", month: "long", year: "numeric" });
@@ -100,9 +100,10 @@ export function AgendaDetail({
           <ul className="flex flex-col gap-2">
             {row.lampiran.map((a, i) => {
               const href = safeHref(a.url);
+              const isUpload = !!href?.startsWith("/uploads/");
               return (
                 <li key={i} className="flex items-center gap-2 rounded-md border border-line py-1.5 pl-3 pr-1.5">
-                  <IconLink className="flex-none text-muted" />
+                  {isUpload ? <IconFile className="flex-none text-primary" /> : <IconLink className="flex-none text-muted" />}
                   <div className="min-w-0 flex-1">
                     <p className="text-[13.5px] font-semibold">{a.type}</p>
                     {href ? (
@@ -111,10 +112,16 @@ export function AgendaDetail({
                         target="_blank"
                         rel="noopener noreferrer"
                         className="block truncate text-[12.5px] text-primary underline-offset-2 hover:underline"
-                        title={href}
+                        title={a.name ?? href}
                       >
-                        {hostOf(href)}
-                        <span className="text-muted">{href.replace(/^https?:\/\/[^/]+/, "")}</span>
+                        {isUpload ? (
+                          a.name ?? href.replace(/^\/uploads\//, "")
+                        ) : (
+                          <>
+                            {hostOf(href)}
+                            <span className="text-muted">{href.replace(/^https?:\/\/[^/]+/, "")}</span>
+                          </>
+                        )}
                       </a>
                     ) : (
                       <p className="truncate text-[12.5px] text-danger">Alamat tidak valid: {a.url}</p>

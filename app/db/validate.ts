@@ -31,8 +31,9 @@ export function parseRow(input: unknown, id: string): { row: AgendaRow } | { err
     if (!isObj(a) || typeof a.type !== "string" || typeof a.url !== "string" || a.type.length > 40 || a.url.length > 2000)
       return { error: "lampiran tidak valid" };
     const href = safeHref(a.url);
-    if (!href) return { error: "lampiran hanya boleh alamat http/https" };
-    lampiran.push({ type: a.type, url: href });
+    if (!href) return { error: "lampiran hanya boleh alamat http/https atau file terunggah" };
+    const name = typeof a.name === "string" && a.name.trim() && a.name.length <= 200 ? a.name.trim() : undefined;
+    lampiran.push(name ? { type: a.type, url: href, name } : { type: a.type, url: href });
   }
   return { row: { id, kegiatan, topic: topic.trim(), date, jam, lampiran } };
 }

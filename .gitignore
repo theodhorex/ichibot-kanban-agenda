@@ -42,3 +42,6 @@ next-env.d.ts
 
 # contoh konfigurasi boleh di-commit (tanpa rahasia)
 !.env.example
+
+# file upload lampiran pengguna
+/public/uploads/
