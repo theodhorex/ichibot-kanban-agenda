@@ -317,6 +317,19 @@ export default function Agenda() {
     [dayIndex, dayW],
   );
 
+  // Pindah bulan: geser ke bulan itu dan juga turun ke baris agenda pertamanya, bukan ke area kosong.
+  const goToMonth = useCallback(
+    (m: number) => {
+      const prefix = `${year}-${pad2(m + 1)}-`;
+      const first = sorted.findIndex((r) => (dmyToIso(r.date) ?? "").startsWith(prefix));
+      const i = dayIndex.get(`${prefix}01`);
+      const el = scroller.current;
+      if (i === undefined || !el) return;
+      el.scrollTo({ left: i * dayW, top: first >= 0 ? first * rowH : el.scrollTop, behavior: "smooth" });
+    },
+    [year, sorted, dayIndex, dayW, rowH],
+  );
+
   // Saat tahun/zoom berubah: gulir ke tanggal tujuan, atau ke bulan berjalan.
   useEffect(() => {
     const target = scrollTarget.current;
@@ -569,7 +582,7 @@ export default function Agenda() {
                 className={`mp ${i === nowMonth ? "now" : ""}`}
                 aria-current={i === activeMonth}
                 title={`Ke ${name} ${year}`}
-                onClick={() => scrollToIso(`${year}-${pad2(i + 1)}-01`)}
+                onClick={() => goToMonth(i)}
               >
                 {name.slice(0, 3)}
                 {monthCounts[i] > 0 && <span className="n">{monthCounts[i]}</span>}
