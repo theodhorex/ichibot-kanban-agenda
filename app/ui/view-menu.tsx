@@ -65,7 +65,23 @@ function Seg<T extends string>({
   );
 }
 
-export default function ViewMenu({ prefs, onChange }: { prefs: Prefs; onChange: (p: Prefs) => void }) {
+export type TopicInfo = { name: string; count: number; color: string };
+
+export default function ViewMenu({
+  prefs,
+  onChange,
+  topics = [],
+  topicFilter = null,
+  onTopicFilter,
+  onTopicColor,
+}: {
+  prefs: Prefs;
+  onChange: (p: Prefs) => void;
+  topics?: TopicInfo[];
+  topicFilter?: string | null;
+  onTopicFilter?: (t: string | null) => void;
+  onTopicColor?: (t: string, color: string) => void;
+}) {
   return (
     <Dropdown label="Tampilan" icon={<IconSliders />} width={330}>
       {() => (
@@ -109,6 +125,36 @@ export default function ViewMenu({ prefs, onChange }: { prefs: Prefs; onChange: 
             ]}
             onChange={(zoom) => onChange({ ...prefs, zoom })}
           />
+          {topics.length > 0 && (
+            <div className="mt-3">
+              <p className="mb-1.5 text-[12.5px] font-semibold text-ink-2">Topik (klik nama untuk menyorot, klik titik untuk ganti warna)</p>
+              <div className="flex flex-wrap gap-1.5" role="group" aria-label="Topik">
+                {topics.map((t) => (
+                  <div key={t.name} className="chip" data-on={topicFilter === t.name}>
+                    <label className="sw" title={`Ubah warna topik ${t.name}`}>
+                      <input
+                        type="color"
+                        value={t.color}
+                        onChange={(e) => onTopicColor?.(t.name, e.target.value)}
+                        className="sr-only-input"
+                        aria-label={`Warna topik ${t.name}`}
+                      />
+                      <i style={{ background: t.color }} />
+                    </label>
+                    <button
+                      type="button"
+                      aria-pressed={topicFilter === t.name}
+                      title={topicFilter === t.name ? "Tampilkan semua topik" : `Sorot hanya topik ${t.name}`}
+                      onClick={() => onTopicFilter?.(topicFilter === t.name ? null : t.name)}
+                    >
+                      {t.name}
+                      <span className="n">{t.count}</span>
+                    </button>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
           <button type="button" onClick={() => onChange(DEFAULT_PREFS)} className="btn btn-ghost btn-sm mt-3 w-full text-muted">
             Atur ulang tampilan
           </button>

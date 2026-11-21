@@ -595,7 +595,14 @@ export default function Agenda() {
                 <span className="text-muted">{rows.length}</span>
               </button>
             )}
-            <ViewMenu prefs={prefs} onChange={setPrefs} />
+            <ViewMenu
+              prefs={prefs}
+              onChange={setPrefs}
+              topics={topics.map((t) => ({ name: t, count: topicCounts.get(t) ?? 0, color: colorOf(t) }))}
+              topicFilter={topicFilter}
+              onTopicFilter={setTopicFilter}
+              onTopicColor={(t, color) => setColors((c) => ({ ...c, [t]: color }))}
+            />
             <Dropdown
               label={exporting ? "Mengekspor" : "Ekspor"}
               icon={exporting ? <IconSpinner /> : <IconDownload />}
@@ -628,39 +635,6 @@ export default function Agenda() {
               <IconPlus size={16} /> Tambah agenda
             </button>
           </div>
-        </div>
-
-        <div className="flex items-center gap-1 overflow-x-auto px-3 pb-2 pt-0.5 [scrollbar-width:none]">
-          {topics.length > 0 && (
-            <>
-              {isList && <span className="mx-2 h-5 w-px flex-none bg-line-strong" aria-hidden />}
-              <div className="flex flex-none items-center gap-1.5" role="group" aria-label="Topik">
-                {topics.map((t) => (
-                  <div key={t} className="chip" data-on={topicFilter === t}>
-                    <label className="sw" title={`Ubah warna topik ${t}`}>
-                      <input
-                        type="color"
-                        value={colorOf(t)}
-                        onChange={(e) => setColors((c) => ({ ...c, [t]: e.target.value }))}
-                        className="sr-only-input"
-                        aria-label={`Warna topik ${t}`}
-                      />
-                      <i style={{ background: colorOf(t) }} />
-                    </label>
-                    <button
-                      type="button"
-                      aria-pressed={topicFilter === t}
-                      title={topicFilter === t ? "Tampilkan semua topik" : `Sorot hanya topik ${t}`}
-                      onClick={() => setTopicFilter((f) => (f === t ? null : t))}
-                    >
-                      {t}
-                      <span className="n">{topicCounts.get(t)}</span>
-                    </button>
-                  </div>
-                ))}
-              </div>
-            </>
-          )}
         </div>
       </header>
 
