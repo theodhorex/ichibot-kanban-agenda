@@ -41,6 +41,7 @@ import {
   IconDownload,
   IconFile,
   IconList,
+  IconPanelLeft,
   IconPlus,
   IconSearch,
   IconSheet,
@@ -475,6 +476,15 @@ export default function Agenda() {
               <IconChevronRight />
             </button>
           </div>
+          <button
+            className="btn btn-ghost btn-icon"
+            onClick={() => setPrefs((p) => ({ ...p, preset: p.preset === "lengkap" ? "kalender" : "lengkap" }))}
+            aria-pressed={isList}
+            aria-label={isList ? "Tutup daftar agenda (kalender penuh)" : "Buka daftar agenda"}
+            title={isList ? "Tutup daftar agenda: kalender penuh" : "Buka daftar agenda"}
+          >
+            <IconPanelLeft />
+          </button>
           <button className="btn" onClick={() => goTo(todayIso || isoOf(new Date()))}>
             Hari ini
           </button>
