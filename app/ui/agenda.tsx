@@ -554,9 +554,11 @@ export default function Agenda() {
               <IconChevronRight />
             </button>
           </div>
-          <button className="btn" onClick={() => goTo(todayIso || isoOf(new Date()))}>
-            Hari ini
-          </button>
+          {!isList && (
+            <button className="btn" onClick={() => goTo(todayIso || isoOf(new Date()))}>
+              Hari ini
+            </button>
+          )}
           {isList && (
             <Dropdown label={`${MONTHS_TITLE[viewMonth]} ${year}`} icon={<IconCalendar />} width={220}>
               {(close) => (
