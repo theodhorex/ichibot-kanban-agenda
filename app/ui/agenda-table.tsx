@@ -3,7 +3,7 @@
 import { memo, useRef, useState, type CSSProperties } from "react";
 import { MONTHS_TITLE, type AgendaRow, type Day } from "../lib/agenda-data";
 import { COL_LABEL, COL_W, type ColKey } from "../lib/view-prefs";
-import { IconExpand, IconPaperclip, IconTrash } from "./icons";
+import { IconExpand, IconPaperclip, IconSearch, IconTrash } from "./icons";
 
 export type Month = { name: string; days: Day[] };
 
@@ -24,6 +24,8 @@ export const TableHead = memo(function TableHead({
   dayW,
   todayIso,
   flashIso,
+  query,
+  onQueryChange,
 }: {
   months: Month[];
   cols: ColKey[];
@@ -32,6 +34,8 @@ export const TableHead = memo(function TableHead({
   dayW: number;
   todayIso: string;
   flashIso?: string | null;
+  query: string;
+  onQueryChange: (q: string) => void;
 }) {
   return (
     <>
@@ -50,7 +54,24 @@ export const TableHead = memo(function TableHead({
               className={`lh ${i === cols.length - 1 ? "edge" : ""}`}
               style={{ ...stickyLeft(lefts[i], COL_W[c]), textAlign: c === "no" ? "center" : "left", paddingLeft: c === "no" ? 0 : 8 }}
             >
-              {COL_LABEL[c]}
+              {c === "kegiatan" ? (
+                <div className="flex h-[64px] flex-col justify-between pt-1.5">
+                  <div className="relative">
+                    <IconSearch size={14} className="pointer-events-none absolute left-2 top-1/2 -translate-y-1/2 text-muted" />
+                    <input
+                      type="search"
+                      value={query}
+                      onChange={(e) => onQueryChange(e.target.value)}
+                      placeholder="Cari agenda"
+                      aria-label="Cari agenda"
+                      className="h-7 w-full rounded-md border border-line-strong bg-surface pl-7 pr-2 text-[12.5px] font-normal text-ink outline-none focus:border-primary"
+                    />
+                  </div>
+                  <span>{COL_LABEL[c]}</span>
+                </div>
+              ) : (
+                COL_LABEL[c]
+              )}
             </th>
           ))}
           {months.map((m) => {

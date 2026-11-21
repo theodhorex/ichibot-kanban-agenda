@@ -43,7 +43,6 @@ import {
   IconFile,
   IconList,
   IconPlus,
-  IconSearch,
   IconSheet,
   IconSpinner,
   LogoMark,
@@ -688,21 +687,6 @@ export default function Agenda() {
             </button>
           </div>
         </div>
-        {isList && (
-          <div className="flex items-center border-t border-line bg-surface-2/50 px-4 py-1.5">
-            <div className="relative w-full max-w-[340px]">
-              <IconSearch className="pointer-events-none absolute left-2.5 top-1/2 -translate-y-1/2 text-muted" />
-              <input
-                type="search"
-                value={query}
-                onChange={(e) => setQuery(e.target.value)}
-                placeholder="Cari agenda"
-                aria-label="Cari agenda"
-                className="field pl-8"
-              />
-            </div>
-          </div>
-        )}
       </header>
 
       {saveBad && (
@@ -747,6 +731,8 @@ export default function Agenda() {
               dayW={dayW}
               todayIso={todayIso}
               flashIso={flashIso}
+              query={query}
+              onQueryChange={setQuery}
             />
             <tbody>
               {gridRows.map(({ row: r, marks }, i) => (
