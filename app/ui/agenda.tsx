@@ -35,6 +35,7 @@ import DatePicker from "./date-picker";
 import DayDialog from "./day-dialog";
 import {
   IconAlert,
+  IconCalendar,
   IconCheck,
   IconChevronLeft,
   IconChevronRight,
@@ -503,6 +504,26 @@ export default function Agenda() {
           <button className="btn" onClick={() => goTo(todayIso || isoOf(new Date()))}>
             Hari ini
           </button>
+          {isList && (
+            <Dropdown label={`${MONTHS_TITLE[viewMonth]} ${year}`} icon={<IconCalendar />} width={220}>
+              {(close) => (
+                <>
+                  {MONTHS_TITLE.map((name, m) => (
+                    <MenuItem
+                      key={name}
+                      icon={m === viewMonth ? <IconCheck size={16} className="text-ok" /> : <span className="inline-block w-4" />}
+                      title={name}
+                      hint={monthCounts[m] > 0 ? `${monthCounts[m]} agenda` : "Belum ada agenda"}
+                      onClick={() => {
+                        close();
+                        scrollToIso(`${year}-${pad2(m + 1)}-01`);
+                      }}
+                    />
+                  ))}
+                </>
+              )}
+            </Dropdown>
+          )}
 
           <div className="relative min-w-[150px] max-w-[320px] flex-1">
             <IconSearch className="pointer-events-none absolute left-2.5 top-1/2 -translate-y-1/2 text-muted" />
@@ -575,23 +596,6 @@ export default function Agenda() {
         </div>
 
         <div className="flex items-center gap-1 overflow-x-auto px-3 pb-2 pt-0.5 [scrollbar-width:none]">
-          {isList && (
-          <nav className="flex flex-none items-center gap-0.5" aria-label={`Bulan di ${year}`}>
-            {MONTHS_TITLE.map((name, i) => (
-              <button
-                key={name}
-                type="button"
-                className={`mp ${i === nowMonth ? "now" : ""}`}
-                aria-current={i === viewMonth}
-                title={`Ke ${name} ${year}`}
-                onClick={() => scrollToIso(`${year}-${pad2(i + 1)}-01`)}
-              >
-                {name.slice(0, 3)}
-                {monthCounts[i] > 0 && <span className="n">{monthCounts[i]}</span>}
-              </button>
-            ))}
-          </nav>
-          )}
           {topics.length > 0 && (
             <>
               {isList && <span className="mx-2 h-5 w-px flex-none bg-line-strong" aria-hidden />}
