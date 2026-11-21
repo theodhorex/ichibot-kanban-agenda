@@ -452,17 +452,17 @@ table.cal {
 @keyframes col-flash-bg {
   0%,
   30% {
-    background-color: #bfe8ea;
+    background-color: #fde9a2;
     box-shadow:
-      inset 2.5px 0 0 var(--color-primary),
-      inset -2.5px 0 0 var(--color-primary),
-      inset 0 0 10px rgba(11, 110, 117, 0.25);
+      inset 2.5px 0 0 #e5a000,
+      inset -2.5px 0 0 #e5a000,
+      inset 0 0 12px rgba(245, 183, 47, 0.35);
   }
   75% {
-    background-color: #e2f4f5;
+    background-color: #fff4d1;
     box-shadow:
-      inset 2px 0 0 var(--color-primary),
-      inset -2px 0 0 var(--color-primary);
+      inset 2px 0 0 #f5b72f,
+      inset -2px 0 0 #f5b72f;
   }
   100% {
     background-color: transparent;
@@ -472,21 +472,21 @@ table.cal {
 @keyframes col-flash-head {
   0%,
   30% {
-    background-color: #bfe8ea;
-    color: var(--color-primary-ink);
+    background-color: #fde9a2;
+    color: #5c3d00;
     font-weight: 700;
     box-shadow:
-      inset 2.5px 0 0 var(--color-primary),
-      inset -2.5px 0 0 var(--color-primary),
-      inset 0 2.5px 0 var(--color-primary);
+      inset 2.5px 0 0 #e5a000,
+      inset -2.5px 0 0 #e5a000,
+      inset 0 2.5px 0 #e5a000;
   }
   75% {
-    background-color: #e2f4f5;
-    color: var(--color-primary-ink);
+    background-color: #fff4d1;
+    color: #5c3d00;
     box-shadow:
-      inset 2px 0 0 var(--color-primary),
-      inset -2px 0 0 var(--color-primary),
-      inset 0 2px 0 var(--color-primary);
+      inset 2px 0 0 #f5b72f,
+      inset -2px 0 0 #f5b72f,
+      inset 0 2px 0 #f5b72f;
   }
   100% {
     background-color: var(--color-surface);
