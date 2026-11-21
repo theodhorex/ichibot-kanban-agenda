@@ -88,7 +88,8 @@ export default function Agenda() {
   const [exporting, setExporting] = useState(false);
   const [detailId, setDetailId] = useState<string | null>(null);
   const [topicFilter, setTopicFilter] = useState<string | null>(null);
-  const [activeMonth, setActiveMonth] = useState(0);
+  const [viewMonth, setViewMonth] = useState(() => new Date().getMonth()); // bulan yang daftar agendanya ditampilkan
+  const [freshIds, setFreshIds] = useState<string[]>([]); // baris yang ditulis di sesi ini: tetap di bawah, urut penulisan
   const [viewH, setViewH] = useState(600);
   const [picker, setPicker] = useState<Picker>(null);
   const [attachId, setAttachId] = useState<string | null>(null);
@@ -253,10 +254,19 @@ export default function Agenda() {
     );
 
   // Baris kosong mengisi sisa tinggi layar supaya selalu ada "kanvas" untuk diklik.
+  // Daftar hanya memuat agenda bulan terpilih (urut tanggal). Baris yang baru ditulis selalu menyusul di bawah.
+  const shown = useMemo(() => {
+    const fresh = new Set(freshIds);
+    const prefix = `${year}-${pad2(viewMonth + 1)}-`;
+    const base = sortRows(rows.filter((r) => !fresh.has(r.id))).filter((r) => (dmyToIso(r.date) ?? "").startsWith(prefix));
+    const byId = new Map(rows.map((r) => [r.id, r]));
+    const added = freshIds.map((id) => byId.get(id)).filter((r): r is AgendaRow => !!r);
+    return [...base, ...added];
+  }, [rows, freshIds, year, viewMonth]);
   const display = useMemo<(AgendaRow | null)[]>(() => {
     const target = Math.ceil(viewH / rowH) + 1;
-    return [...sorted, ...Array.from({ length: Math.max(4, target - sorted.length) }, () => null)];
-  }, [sorted, viewH, rowH]);
+    return [...shown, ...Array.from({ length: Math.max(4, target - shown.length) }, () => null)];
+  }, [shown, viewH, rowH]);
 
   const topicCounts = useMemo(() => {
     const m = new Map<string, number>();
@@ -286,8 +296,6 @@ export default function Agenda() {
     const from = Math.max(0, Math.floor((first - OVERSCAN) / QUANT) * QUANT);
     const to = Math.min(days.length, Math.ceil((last + OVERSCAN) / QUANT) * QUANT);
     setRange((r) => (r.from === from && r.to === to ? r : { from, to }));
-    const spy = days[Math.min(days.length - 1, Math.max(0, first + 3))];
-    if (spy) setActiveMonth(Number(spy.iso.slice(5, 7)) - 1);
     setViewH(el.clientHeight);
   }, [dayW, days]);
 
@@ -312,22 +320,10 @@ export default function Agenda() {
       const i = dayIndex.get(iso);
       const el = scroller.current;
       if (i === undefined || !el) return;
-      el.scrollTo({ left: i * dayW, behavior: smooth ? "smooth" : "auto" });
+      setViewMonth(Number(iso.slice(5, 7)) - 1);
+      el.scrollTo({ left: i * dayW, top: 0, behavior: smooth ? "smooth" : "auto" });
     },
     [dayIndex, dayW],
-  );
-
-  // Pindah bulan: geser ke bulan itu dan juga turun ke baris agenda pertamanya, bukan ke area kosong.
-  const goToMonth = useCallback(
-    (m: number) => {
-      const prefix = `${year}-${pad2(m + 1)}-`;
-      const first = sorted.findIndex((r) => (dmyToIso(r.date) ?? "").startsWith(prefix));
-      const i = dayIndex.get(`${prefix}01`);
-      const el = scroller.current;
-      if (i === undefined || !el) return;
-      el.scrollTo({ left: i * dayW, top: first >= 0 ? first * rowH : el.scrollTop, behavior: "smooth" });
-    },
-    [year, sorted, dayIndex, dayW, rowH],
   );
 
   // Saat tahun/zoom berubah: gulir ke tanggal tujuan, atau ke bulan berjalan.
@@ -367,6 +363,7 @@ export default function Agenda() {
       const r = { ...emptyRow(), date: dmy };
       draft.current.add(r.id);
       pendingFocus.current = r.id;
+      setFreshIds((f) => [...f, r.id]);
       setRows((rs) => [...rs, r]);
     } else {
       setEditing({ row: { ...emptyRow(), date: dmy }, isNew: true });
@@ -385,6 +382,7 @@ export default function Agenda() {
     }
   };
   const saveRow = (r: AgendaRow) => {
+    if (!rows.some((x) => x.id === r.id)) setFreshIds((f) => [...f, r.id]);
     setRows((rs) => (rs.some((x) => x.id === r.id) ? rs.map((x) => (x.id === r.id ? r : x)) : [...rs, r]));
     setEditing(null);
     const iso = dmyToIso(r.date);
@@ -400,7 +398,11 @@ export default function Agenda() {
   const onField = useCallback<FieldHandler>((id, field, value) => {
     const v = value.trim();
     if (id === null) {
-      if (v) setRows((rs) => [...rs, { ...emptyRow(), [field]: v }]);
+      if (v) {
+        const r = { ...emptyRow(), [field]: v };
+        setFreshIds((f) => [...f, r.id]);
+        setRows((rs) => [...rs, r]);
+      }
       return;
     }
     if (field === "kegiatan" && draft.current.has(id)) {
@@ -580,9 +582,9 @@ export default function Agenda() {
                 key={name}
                 type="button"
                 className={`mp ${i === nowMonth ? "now" : ""}`}
-                aria-current={i === activeMonth}
+                aria-current={i === viewMonth}
                 title={`Ke ${name} ${year}`}
-                onClick={() => goToMonth(i)}
+                onClick={() => scrollToIso(`${year}-${pad2(i + 1)}-01`)}
               >
                 {name.slice(0, 3)}
                 {monthCounts[i] > 0 && <span className="n">{monthCounts[i]}</span>}
@@ -664,7 +666,7 @@ export default function Agenda() {
                   key={r?.id ?? `e${i}`}
                   row={r}
                   idx={i}
-                  hint={!r && i === sorted.length}
+                  hint={!r && i === shown.length}
                   markIso={r ? dmyToIso(r.date) : null}
                   color={r ? colorOf(r.topic.trim()) : DEFAULT_TOPIC_COLOR}
                   dim={r ? !matches(r) || (topicFilter !== null && r.topic.trim() !== topicFilter) : false}
