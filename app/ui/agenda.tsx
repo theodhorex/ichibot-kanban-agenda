@@ -624,18 +624,6 @@ export default function Agenda() {
             </button>
           )}
 
-          <div className="relative min-w-[150px] max-w-[320px] flex-1">
-            <IconSearch className="pointer-events-none absolute left-2.5 top-1/2 -translate-y-1/2 text-muted" />
-            <input
-              type="search"
-              value={query}
-              onChange={(e) => setQuery(e.target.value)}
-              placeholder="Cari agenda"
-              aria-label="Cari agenda"
-              className="field pl-8"
-            />
-          </div>
-
           <div className="ml-auto flex flex-wrap items-center gap-2">
             <span
               role="status"
@@ -700,6 +688,21 @@ export default function Agenda() {
             </button>
           </div>
         </div>
+        {isList && (
+          <div className="flex items-center border-t border-line bg-surface-2/50 px-4 py-1.5">
+            <div className="relative w-full max-w-[340px]">
+              <IconSearch className="pointer-events-none absolute left-2.5 top-1/2 -translate-y-1/2 text-muted" />
+              <input
+                type="search"
+                value={query}
+                onChange={(e) => setQuery(e.target.value)}
+                placeholder="Cari agenda"
+                aria-label="Cari agenda"
+                className="field pl-8"
+              />
+            </div>
+          </div>
+        )}
       </header>
 
       {saveBad && (
