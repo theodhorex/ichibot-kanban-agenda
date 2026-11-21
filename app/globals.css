@@ -448,6 +448,43 @@ table.cal {
   filter: brightness(0.88);
 }
 
+/* sorotan kolom tanggal saat agenda baru dibuat */
+@keyframes col-flash-bg {
+  0% {
+    background-color: color-mix(in srgb, var(--color-primary) 26%, transparent);
+    box-shadow: inset 2px 0 0 var(--color-primary), inset -2px 0 0 var(--color-primary);
+  }
+  70% {
+    background-color: color-mix(in srgb, var(--color-primary) 12%, transparent);
+    box-shadow: inset 2px 0 0 var(--color-primary), inset -2px 0 0 var(--color-primary);
+  }
+  100% {
+    background-color: transparent;
+    box-shadow: inset 2px 0 0 transparent, inset -2px 0 0 transparent;
+  }
+}
+@keyframes col-flash-head {
+  0% {
+    background-color: color-mix(in srgb, var(--color-primary) 28%, var(--color-surface));
+    box-shadow: inset 2px 0 0 var(--color-primary), inset -2px 0 0 var(--color-primary), inset 0 2px 0 var(--color-primary);
+  }
+  70% {
+    background-color: color-mix(in srgb, var(--color-primary) 14%, var(--color-surface));
+    box-shadow: inset 2px 0 0 var(--color-primary), inset -2px 0 0 var(--color-primary), inset 0 2px 0 var(--color-primary);
+  }
+  100% {
+    background-color: var(--color-surface);
+    box-shadow: none;
+  }
+}
+.wh.flash {
+  animation: col-flash-head 2.2s ease-out forwards;
+}
+.dh.flash,
+.dc.flash {
+  animation: col-flash-bg 2.2s ease-out forwards;
+}
+
 /* sel kiri */
 .lc {
   position: sticky;

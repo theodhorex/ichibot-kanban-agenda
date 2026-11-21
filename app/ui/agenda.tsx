@@ -95,6 +95,8 @@ export default function Agenda() {
   const [attachId, setAttachId] = useState<string | null>(null);
   const [confirmId, setConfirmId] = useState<string | null>(null);
   const [listOpen, setListOpen] = useState(false);
+  const [flashIso, setFlashIso] = useState<string | null>(null);
+  const flashTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const draft = useRef(new Set<string>()); // baris baru yang dibuang bila kegiatannya dibiarkan kosong
   const pendingFocus = useRef<string | null>(null);
   const scroller = useRef<HTMLDivElement>(null);
@@ -388,15 +390,30 @@ export default function Agenda() {
     queueMicrotask(measure);
   }, [measure]);
 
-  const goTo = (iso: string) => {
-    const y = Number(iso.slice(0, 4));
-    if (y !== year) {
-      scrollTarget.current = iso;
-      setYear(y);
-    } else {
-      requestAnimationFrame(() => scrollToIso(iso));
-    }
-  };
+  const flashDate = useCallback((iso: string) => {
+    if (flashTimer.current) clearTimeout(flashTimer.current);
+    setFlashIso(iso);
+    flashTimer.current = setTimeout(() => {
+      setFlashIso((cur) => (cur === iso ? null : cur));
+    }, 2200);
+  }, []);
+
+  useEffect(() => () => {
+    if (flashTimer.current) clearTimeout(flashTimer.current);
+  }, []);
+
+  const goTo = useCallback(
+    (iso: string) => {
+      const y = Number(iso.slice(0, 4));
+      if (y !== year) {
+        scrollTarget.current = iso;
+        setYear(y);
+      } else {
+        requestAnimationFrame(() => scrollToIso(iso));
+      }
+    },
+    [year, scrollToIso],
+  );
 
   /* ---------- tambah / ubah / hapus ---------- */
   const update = (id: string, patch: Partial<AgendaRow>) =>
@@ -435,11 +452,15 @@ export default function Agenda() {
     }
   };
   const saveRow = (r: AgendaRow) => {
-    if (!rows.some((x) => x.id === r.id)) setFreshIds((f) => [...f, r.id]);
-    setRows((rs) => (rs.some((x) => x.id === r.id) ? rs.map((x) => (x.id === r.id ? r : x)) : [...rs, r]));
+    const isNew = !rows.some((x) => x.id === r.id);
+    if (isNew) setFreshIds((f) => [...f, r.id]);
+    setRows((rs) => (isNew ? [...rs, r] : rs.map((x) => (x.id === r.id ? r : x))));
     setEditing(null);
     const iso = dmyToIso(r.date);
-    if (iso) goTo(iso);
+    if (iso) {
+      goTo(iso);
+      if (isNew) flashDate(iso);
+    }
   };
   const deleteRow = (id: string) => {
     setRows((rs) => rs.filter((r) => r.id !== id));
@@ -448,25 +469,31 @@ export default function Agenda() {
   };
 
   // Dipanggil saat sel kegiatan/topik kehilangan fokus (stabil, agar baris ter-memo tidak ikut berubah).
-  const onField = useCallback<FieldHandler>((id, field, value) => {
-    const v = value.trim();
-    if (id === null) {
-      if (v) {
-        const r = { ...emptyRow(), [field]: v };
-        setFreshIds((f) => [...f, r.id]);
-        setRows((rs) => [...rs, r]);
-      }
-      return;
-    }
-    if (field === "kegiatan" && draft.current.has(id)) {
-      draft.current.delete(id);
-      if (!v) {
-        setRows((rs) => rs.filter((r) => r.id !== id));
+  const onField = useCallback<FieldHandler>(
+    (id, field, value) => {
+      const v = value.trim();
+      if (id === null) {
+        if (v) {
+          const r = { ...emptyRow(), [field]: v };
+          setFreshIds((f) => [...f, r.id]);
+          setRows((rs) => [...rs, r]);
+        }
         return;
       }
-    }
-    setRows((rs) => rs.map((r) => (r.id === id && r[field] !== v ? { ...r, [field]: v } : r)));
-  }, []);
+      if (field === "kegiatan" && draft.current.has(id)) {
+        draft.current.delete(id);
+        if (!v) {
+          setRows((rs) => rs.filter((r) => r.id !== id));
+          return;
+        }
+        const cur = rowsRef.current.find((r) => r.id === id);
+        const iso = cur ? dmyToIso(cur.date) : null;
+        if (iso) flashDate(iso);
+      }
+      setRows((rs) => rs.map((r) => (r.id === id && r[field] !== v ? { ...r, [field]: v } : r)));
+    },
+    [flashDate],
+  );
 
   // Satu penangan klik untuk seluruh tabel (bukan satu per sel).
   const onTableClick = (e: React.MouseEvent) => {
@@ -524,6 +551,7 @@ export default function Agenda() {
             : "Tersimpan";
   const saveBad = dbState === "error" || saveState === "error";
   const detailRow = detailId ? rows.find((r) => r.id === detailId) : undefined;
+  const pickerRow = picker ? rows.find((r) => r.id === picker.id) : undefined;
 
   return (
     <div className="flex h-full flex-col bg-surface text-ink">
@@ -698,7 +726,15 @@ export default function Agenda() {
           aria-busy={dbState !== "ready"}
         >
           <table onClick={onTableClick} className="cal" style={{ width: total + days.length * dayW }}>
-            <TableHead months={viewMonths} cols={cols} lefts={lefts} leftTotal={total} dayW={dayW} todayIso={todayIso} />
+            <TableHead
+              months={viewMonths}
+              cols={cols}
+              lefts={lefts}
+              leftTotal={total}
+              dayW={dayW}
+              todayIso={todayIso}
+              flashIso={flashIso}
+            />
             <tbody>
               {gridRows.map(({ row: r, marks }, i) => (
                 <AgendaRowView
@@ -719,6 +755,7 @@ export default function Agenda() {
                   to={range.to}
                   rowH={rowH}
                   todayIso={todayIso}
+                  flashIso={flashIso}
                 />
               ))}
               {display.map((r, i) => (
@@ -740,6 +777,7 @@ export default function Agenda() {
                   to={range.to}
                   rowH={rowH}
                   todayIso={todayIso}
+                  flashIso={flashIso}
                 />
               ))}
             </tbody>
@@ -777,40 +815,40 @@ export default function Agenda() {
       )}
       </div>
 
-      {picker &&
-        (() => {
-          const row = rows.find((r) => r.id === picker.id);
-          if (!row) return null;
-          return (
-            <Popover anchor={picker.anchor} onClose={() => setPicker(null)} label={picker.kind === "date" ? "Pilih tanggal" : "Pilih jam"}>
-              {picker.kind === "date" ? (
-                <DatePicker
-                  value={row.date}
-                  onPick={(date) => {
-                    update(row.id, { date });
-                    setPicker(null);
-                  }}
-                  onClear={() => {
-                    update(row.id, { date: "" });
-                    setPicker(null);
-                  }}
-                />
-              ) : (
-                <TimePicker
-                  value={row.jam}
-                  onApply={(jam) => {
-                    update(row.id, { jam });
-                    setPicker(null);
-                  }}
-                  onClear={() => {
-                    update(row.id, { jam: "" });
-                    setPicker(null);
-                  }}
-                />
-              )}
-            </Popover>
-          );
-        })()}
+      {picker && pickerRow && (
+        <Popover anchor={picker.anchor} onClose={() => setPicker(null)} label={picker.kind === "date" ? "Pilih tanggal" : "Pilih jam"}>
+          {picker.kind === "date" ? (
+            <DatePicker
+              value={pickerRow.date}
+              onPick={(date) => {
+                update(pickerRow.id, { date });
+                setPicker(null);
+                const iso = dmyToIso(date);
+                if (iso) {
+                  goTo(iso);
+                  flashDate(iso);
+                }
+              }}
+              onClear={() => {
+                update(pickerRow.id, { date: "" });
+                setPicker(null);
+              }}
+            />
+          ) : (
+            <TimePicker
+              value={pickerRow.jam}
+              onApply={(jam) => {
+                update(pickerRow.id, { jam });
+                setPicker(null);
+              }}
+              onClear={() => {
+                update(pickerRow.id, { jam: "" });
+                setPicker(null);
+              }}
+            />
+          )}
+        </Popover>
+      )}
       {attachId && rows.find((r) => r.id === attachId) && (
         <AttachmentsDialog
           title={rows.find((r) => r.id === attachId)?.kegiatan ?? ""}

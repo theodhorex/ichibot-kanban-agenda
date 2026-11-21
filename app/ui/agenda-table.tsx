@@ -23,6 +23,7 @@ export const TableHead = memo(function TableHead({
   leftTotal,
   dayW,
   todayIso,
+  flashIso,
 }: {
   months: Month[];
   cols: ColKey[];
@@ -30,6 +31,7 @@ export const TableHead = memo(function TableHead({
   leftTotal: number;
   dayW: number;
   todayIso: string;
+  flashIso?: string | null;
 }) {
   return (
     <>
@@ -65,7 +67,11 @@ export const TableHead = memo(function TableHead({
         <tr>
           {months.flatMap((m) =>
             m.days.map((d) => (
-              <th key={d.iso} scope="col" className={`wh ${d.weekend ? "we" : ""} ${d.first ? "first" : ""}`}>
+              <th
+                key={d.iso}
+                scope="col"
+                className={`wh ${d.weekend ? "we" : ""} ${d.first ? "first" : ""} ${d.iso === flashIso ? "flash" : ""}`}
+              >
                 {d.letter}
               </th>
             )),
@@ -79,7 +85,7 @@ export const TableHead = memo(function TableHead({
                 data-iso={d.iso}
                 data-head="1"
                 title="Lihat agenda minggu dan bulan ini"
-                className={`dh ${d.weekend ? "we" : ""} ${d.first ? "first" : ""}`}
+                className={`dh ${d.weekend ? "we" : ""} ${d.first ? "first" : ""} ${d.iso === flashIso ? "flash" : ""}`}
               >
                 {d.iso === todayIso ? <span className="tb">{d.day}</span> : d.day}
               </th>
@@ -234,6 +240,7 @@ export const AgendaRowView = memo(function AgendaRowView({
   to,
   rowH,
   todayIso,
+  flashIso,
   onField,
 }: {
   row: AgendaRow | null;
@@ -251,6 +258,7 @@ export const AgendaRowView = memo(function AgendaRowView({
   to: number;
   rowH: number;
   todayIso: string;
+  flashIso?: string | null;
   onField: FieldHandler;
 }) {
   const hi = Math.min(to, days.length);
@@ -264,7 +272,7 @@ export const AgendaRowView = memo(function AgendaRowView({
         data-iso={d.iso}
         data-m={mk?.id}
         title={mk?.title}
-        className={`dc ${d.weekend ? "we" : ""} ${d.iso === todayIso ? "today" : ""} ${d.first ? "first" : ""} ${mk ? "mark" : ""}`}
+        className={`dc ${d.weekend ? "we" : ""} ${d.iso === todayIso ? "today" : ""} ${d.first ? "first" : ""} ${mk ? "mark" : ""} ${d.iso === flashIso ? "flash" : ""}`}
         style={mk ? ({ "--mark": mk.color, opacity: mk.dim ? 0.28 : 1 } as CSSProperties) : undefined}
       />,
     );
