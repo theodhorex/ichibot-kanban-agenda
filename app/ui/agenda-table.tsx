@@ -51,13 +51,16 @@ export const TableHead = memo(function TableHead({
               {COL_LABEL[c]}
             </th>
           ))}
-          {months.map((m, mi) => (
+          {months.map((m) => {
+            const mi = Number(m.days[0].iso.slice(5, 7)) - 1; // nomor bulan sebenarnya (bukan urutan di daftar yang tampil)
+            return (
             <th key={m.name} colSpan={m.days.length} className={`mh ${mi % 2 ? "alt" : ""}`}>
               <span className="mh-label" style={{ left: leftTotal + 10 }}>
                 {MONTHS_TITLE[mi]}
               </span>
             </th>
-          ))}
+            );
+          })}
         </tr>
         <tr>
           {months.flatMap((m) =>
